@@ -1,0 +1,88 @@
+:host { display: block; }
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tf-ink-500);
+  text-decoration: none;
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+  &:hover { color: var(--tf-primary); }
+}
+
+.detail-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.title-block { min-width: 0; }
+.title-row { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+h1 { margin: 0; font-size: 26px; line-height: 1.2; font-weight: 700; letter-spacing: -.02em; overflow-wrap: anywhere; }
+.meta { margin: 6px 0 0; color: var(--tf-ink-500); }
+.header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.overdue-notice { margin-bottom: 16px; }
+
+.tf-panel + .tf-panel { margin-top: 20px; }
+
+.upload { padding: 16px 20px 4px; }
+.file-input { display: none; }
+
+.dropzone {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 18px 20px;
+  border: 1.5px dashed var(--tf-ink-300);
+  border-radius: var(--tf-radius);
+  background: var(--tf-surface-muted);
+  color: var(--tf-ink-600);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .15s ease, background-color .15s ease;
+
+  mat-icon { color: var(--tf-primary); font-size: 28px; width: 28px; height: 28px; }
+  span { display: flex; flex-direction: column; gap: 2px; }
+  strong { color: var(--tf-ink-800); font-size: 14px; }
+  small { color: var(--tf-ink-500); font-size: 12px; }
+  &:hover, &.dragging { border-color: var(--tf-primary); background: var(--tf-primary-soft); }
+}
+
+.selected-file {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  border: 1px solid var(--tf-line);
+  border-radius: var(--tf-radius);
+  background: var(--tf-surface-muted);
+  > mat-icon { color: var(--tf-primary); }
+}
+
+.file-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin-right: auto;
+  strong { overflow-wrap: anywhere; }
+  small { color: var(--tf-ink-500); }
+}
+
+.file-name { font-weight: 600; color: var(--tf-ink-900); overflow-wrap: anywhere; }
+
+@media (max-width: 600px) {
+  h1 { font-size: 22px; }
+  .header-actions { width: 100%; }
+  .upload { padding: 14px 14px 4px; }
+}

@@ -1,0 +1,31 @@
+<h2 mat-dialog-title>{{ isEdit ? 'Editar país' : 'Nuevo país' }}</h2>
+
+<form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <mat-dialog-content>
+    @if (error()) {
+      <div class="tf-form-error" role="alert"><mat-icon aria-hidden="true">error</mat-icon><span>{{ error() }}</span></div>
+    }
+
+    <div class="tf-form-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>Nombre</mat-label>
+        <input matInput formControlName="name" maxlength="120" cdkFocusInitial>
+        <mat-error>Ingresá el nombre del país.</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Código ISO</mat-label>
+        <input matInput formControlName="code" maxlength="2" placeholder="AR" style="text-transform: uppercase">
+        <mat-hint>Dos letras (ISO 3166-1 alfa-2).</mat-hint>
+        <mat-error>Ingresá un código de dos letras.</mat-error>
+      </mat-form-field>
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close [disabled]="saving()">Cancelar</button>
+    <button mat-flat-button type="submit" [disabled]="saving()">
+      @if (saving()) { <mat-spinner diameter="18" aria-label="Guardando" /> } @else { {{ isEdit ? 'Guardar cambios' : 'Crear país' }} }
+    </button>
+  </mat-dialog-actions>
+</form>

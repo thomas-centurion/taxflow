@@ -1,0 +1,49 @@
+// Design tokens shared by every screen. Components consume these custom properties
+// instead of hard-coded colors so the product keeps a single, consistent palette.
+:root {
+  --tf-font: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --tf-font-mono: 'JetBrains Mono', Consolas, 'SFMono-Regular', monospace;
+
+  // Brand / interactive
+  --tf-primary: var(--mat-sys-primary, #005cbb);
+  --tf-primary-strong: #00468f;
+  --tf-primary-soft: #eaf1fb;
+
+  // Neutrals (ink scale)
+  --tf-ink-900: #0f1b2d;
+  --tf-ink-800: #1c2a3d;
+  --tf-ink-700: #33445a;
+  --tf-ink-600: #4b5b70;
+  --tf-ink-500: #657488;
+  --tf-ink-400: #8794a6;
+  --tf-ink-300: #b8c2cf;
+  --tf-line: #e3e8ef;
+  --tf-line-soft: #eef1f5;
+  --tf-bg: #f5f7fa;
+  --tf-surface: #ffffff;
+  --tf-surface-muted: #f9fafc;
+  --tf-sidebar: #0f1b2d;
+
+  // Semantic
+  --tf-success: #1b7a4b;
+  --tf-success-soft: #e6f4ec;
+  --tf-warning: #8f5d07;
+  --tf-warning-soft: #fdf2d8;
+  --tf-danger: #b42318;
+  --tf-danger-soft: #fdecea;
+  --tf-danger-line: #f4cfcb;
+  --tf-info: #1d5fb8;
+  --tf-info-soft: #e8f1fc;
+  --tf-violet: #6440b4;
+  --tf-violet-soft: #f1ecfb;
+  --tf-neutral: #556477;
+  --tf-neutral-soft: #eef1f5;
+
+  // Shape & depth
+  --tf-radius-sm: 6px;
+  --tf-radius: 10px;
+  --tf-radius-lg: 14px;
+  --tf-shadow-sm: 0 1px 2px rgba(15, 27, 45, .06);
+  --tf-shadow: 0 1px 3px rgba(15, 27, 45, .08), 0 4px 12px rgba(15, 27, 45, .04);
+  --tf-focus-ring: 0 0 0 3px rgba(0, 92, 187, .28);
+}
