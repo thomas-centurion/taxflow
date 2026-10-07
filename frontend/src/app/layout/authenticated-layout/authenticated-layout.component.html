@@ -1,0 +1,100 @@
+<a class="skip-link" href="#main-content">Saltar al contenido</a>
+
+<mat-sidenav-container class="shell">
+  <mat-sidenav #drawer class="sidebar" [mode]="isMobile() ? 'over' : 'side'" [opened]="!isMobile()" [fixedInViewport]="isMobile()">
+    <a class="brand" routerLink="/app" (click)="closeOnMobile(drawer)" aria-label="TaxFlow, ir al inicio">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 40 40"><path d="M5 8h17v4h-6.5v20h-4V12H5zM23 8h12v4h-8v6h7v4h-7v10h-4z" /></svg>
+      </span>
+      <span class="brand-name">TaxFlow</span>
+    </a>
+
+    <nav class="nav" aria-label="Navegación principal">
+      @for (group of navGroups; track group.label) {
+        <p class="nav-group">{{ group.label }}</p>
+        <ul>
+          @for (link of group.links; track link.path) {
+            <li>
+              <a class="nav-link" [routerLink]="link.path" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: !!link.exact }"
+                ariaCurrentWhenActive="page" (click)="closeOnMobile(drawer)">
+                <mat-icon aria-hidden="true">{{ link.icon }}</mat-icon>
+                <span>{{ link.label }}</span>
+                @if (link.badge === 'unread' && unreadCount() > 0) {
+                  <span class="nav-count" [attr.aria-label]="unreadCount() + ' sin leer'">{{ unreadCount() > 99 ? '99+' : unreadCount() }}</span>
+                }
+              </a>
+            </li>
+          }
+        </ul>
+      }
+    </nav>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="content">
+    <header class="topbar">
+      @if (isMobile()) {
+        <button mat-icon-button type="button" (click)="drawer.toggle()" aria-label="Abrir menú de navegación">
+          <mat-icon>menu</mat-icon>
+        </button>
+      }
+      <span class="section">{{ sectionTitle() }}</span>
+      <span class="spacer"></span>
+
+      <button mat-icon-button type="button" class="bell" [matMenuTriggerFor]="notificationMenu" (menuOpened)="loadNotifications()"
+        [attr.aria-label]="unreadCount() ? 'Notificaciones, ' + unreadCount() + ' sin leer' : 'Notificaciones'" matTooltip="Notificaciones">
+        <mat-icon [matBadge]="unreadCount() > 99 ? '99+' : unreadCount()" [matBadgeHidden]="unreadCount() === 0" matBadgeSize="small" matBadgeColor="warn" aria-hidden="false">notifications</mat-icon>
+      </button>
+
+      <mat-menu #notificationMenu="matMenu" class="tf-notification-menu" xPosition="before">
+        <div class="menu-head" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
+          <strong>Notificaciones</strong>
+          @if (unreadCount() > 0) {
+            <button mat-button type="button" class="menu-link" (click)="markAllNotificationsRead()">Marcar todas como leídas</button>
+          }
+        </div>
+        <mat-divider />
+        @if (notificationsLoading() && !recentNotifications().length) {
+          <p class="menu-note">Cargando avisos…</p>
+        } @else if (notificationError()) {
+          <p class="menu-note error">{{ notificationError() }}</p>
+        } @else {
+          @for (item of recentNotifications(); track item.id) {
+            <button mat-menu-item type="button" class="menu-item" [class.unread]="!item.isRead" (click)="openNotification(item)">
+              <mat-icon aria-hidden="true">{{ notificationIcons[item.type] }}</mat-icon>
+              <span class="menu-copy">
+                <strong>{{ item.title }}</strong>
+                <span>{{ item.message }}</span>
+                <small>{{ item.createdAt | timeAgo }}</small>
+              </span>
+            </button>
+          } @empty {
+            <p class="menu-note">No tenés avisos recientes.</p>
+          }
+        }
+        <mat-divider />
+        <a mat-menu-item routerLink="/app/notifications" class="menu-footer">Ver todas las notificaciones</a>
+      </mat-menu>
+
+      @if (auth.user$ | async; as user) {
+        <button type="button" class="user-button" [matMenuTriggerFor]="userMenu" [attr.aria-label]="'Cuenta de ' + user.firstName + ' ' + user.lastName">
+          <span class="avatar" aria-hidden="true">{{ initials(user) }}</span>
+          <span class="user-copy"><strong>{{ user.firstName }} {{ user.lastName }}</strong><small>{{ roleLabel(user.role) }}</small></span>
+          <mat-icon aria-hidden="true" class="chevron">expand_more</mat-icon>
+        </button>
+        <mat-menu #userMenu="matMenu" xPosition="before">
+          <div class="account" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
+            <strong>{{ user.firstName }} {{ user.lastName }}</strong>
+            <span>{{ user.email }}</span>
+            <span class="tf-badge tf-badge-plain" data-tone="info">{{ roleLabel(user.role) }}</span>
+          </div>
+          <mat-divider />
+          <button mat-menu-item type="button" (click)="auth.logout()"><mat-icon>logout</mat-icon><span>Cerrar sesión</span></button>
+        </mat-menu>
+      }
+    </header>
+
+    <main id="main-content" class="page" tabindex="-1">
+      <router-outlet />
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>

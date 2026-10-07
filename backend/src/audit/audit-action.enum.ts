@@ -3,6 +3,7 @@ export enum AuditAction {
   UPDATE = 'UPDATE',
   DELETE = 'DELETE',
   LOGIN = 'LOGIN',
+  LOGIN_FAILED = 'LOGIN_FAILED',
   LOGOUT = 'LOGOUT',
   UPLOAD = 'UPLOAD',
   DOWNLOAD = 'DOWNLOAD',

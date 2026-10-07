@@ -1,7 +1,8 @@
-@import '@angular/material/prebuilt-themes/azure-blue.css';
-
-html, body { min-height: 100%; }
-body { margin: 0; background: #f5f7fa; color: #182536; font-family: Roboto, 'Segoe UI', sans-serif; }
-* { box-sizing: border-box; }
-
-html,body{height:100%;}body{overflow-x:hidden}.mat-mdc-snack-bar-container{--mdc-snackbar-container-color:#253b54;--mdc-snackbar-supporting-text-color:#fff}.mat-mdc-form-field-subscript-wrapper{font-size:11px}
+// Global styles: design tokens, Material theme and shared layout primitives.
+// Component stylesheets only contain what is specific to that component.
+@use 'styles/tokens';
+@use 'styles/material';
+@use 'styles/base';
+@use 'styles/page';
+@use 'styles/table';
+@use 'styles/feedback';

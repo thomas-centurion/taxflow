@@ -1,0 +1,17 @@
+h2 { display: flex; align-items: center; gap: 10px; }
+
+.identity { margin-bottom: 8px; }
+.email { display: block; font-size: 13px; font-weight: 400; color: var(--tf-ink-500); }
+
+h3 { margin: 20px 0 10px; font-size: 14px; font-weight: 600; }
+
+.changes {
+  border: 1px solid var(--tf-line);
+  border-radius: var(--tf-radius);
+  overflow: hidden;
+  tbody th { text-align: left; font-weight: 600; color: var(--tf-ink-700); background: none; padding: 11px 16px; border-bottom: 1px solid var(--tf-line-soft); }
+  .before { color: var(--tf-ink-500); text-decoration: line-through; text-decoration-color: var(--tf-ink-300); }
+  .after { color: var(--tf-success); font-weight: 600; }
+}
+
+.details { gap: 12px 24px; }

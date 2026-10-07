@@ -1,4 +1,4 @@
-export type AuditAction = 'CREATE' | 'UPDATE' | 'DELETE' | 'LOGIN' | 'LOGOUT' | 'UPLOAD' | 'DOWNLOAD' | 'MARK_READ' | 'NOTIFICATION_CREATED';
+export type AuditAction = 'CREATE' | 'UPDATE' | 'DELETE' | 'LOGIN' | 'LOGOUT' | 'UPLOAD' | 'DOWNLOAD' | 'MARK_READ' | 'NOTIFICATION_CREATED' | 'LOGIN_FAILED';
 export type AuditActorType = 'USER' | 'SYSTEM';
 
 export interface AuditLog {

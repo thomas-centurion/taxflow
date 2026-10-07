@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { Country } from '../countries/country.entity';
 import { rethrowDatabaseError } from '../common/database-errors';
 import { PaginatedResult, PaginationQueryDto, paginationMeta } from '../common/pagination-query.dto';
 import { Company } from './company.entity';
+import { TaxObligation } from '../tax-obligations/tax-obligation.entity';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
 import { AuditLogService } from '../audit/audit-log.service';
@@ -54,7 +55,13 @@ export class CompaniesService {
       if (!existing) throw new NotFoundException('Company not found.');
       const changes = diffFields(existing, input, COMPANY_FIELDS);
       if (!Object.keys(changes).length) return existing;
-      const updated = await repository.save({ ...existing, ...input });
+      // Obligations copy their company's country; moving the company would leave them inconsistent.
+      if (changes.countryId && await manager.getRepository(TaxObligation).existsBy({ companyId: id })) {
+        throw new ConflictException('The country of a company with tax obligations cannot be changed.');
+      }
+      // Loaded relation objects take precedence over FK columns in TypeORM, so they must not be part of the save.
+      const { country: _country, ...columns } = existing;
+      const updated = await repository.save({ ...columns, ...input });
       await this.audit.record({ actor, action: AuditAction.UPDATE, entity: 'Company', entityId: id, metadata: { changes } }, manager);
       return (await repository.findOne({ where: { id }, relations: { country: true } })) ?? updated;
     }); }

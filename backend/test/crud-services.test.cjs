@@ -68,3 +68,29 @@ test('TaxObligationsService notifies the responsible user only when status chang
   assert.equal(notification.previousStatus, 'PENDING');
   assert.equal(notification.record.status, 'IN_PROGRESS');
 });
+
+test('TaxObligationsService.update persists reassigned FKs without stale relation objects and returns reloaded relations', async () => {
+  const oldId = '11111111-1111-4111-8111-111111111111';
+  const newId = '22222222-2222-4222-8222-222222222222';
+  const current = {
+    id: uuid, companyId: oldId, countryId: oldId, responsibleUserId: oldId, name: 'VAT', type: 'VAT', status: 'PENDING', dueDate: '2099-10-10', updatedAt: new Date(),
+    company: { id: oldId, name: 'Old company' }, country: { id: oldId, code: 'AR' }, responsibleUser: { id: oldId, email: 'old@example.local' },
+  };
+  const reloaded = { ...current, companyId: newId, countryId: newId, responsibleUserId: newId, company: { id: newId, name: 'New company' }, country: { id: newId, code: 'BR' }, responsibleUser: { id: newId, email: 'new@example.local' } };
+  const rows = [current, current, reloaded];
+  let savedRecord;
+  const obligations = { findOne: async () => rows.shift(), save: async (record) => { savedRecord = record; return record; } };
+  const companies = { findOne: async () => ({ id: newId, countryId: newId }) };
+  const users = { findOneBy: async () => ({ id: newId, isActive: true }) };
+  const notifications = { notifyStatusChanged: async () => undefined };
+  const service = new TaxObligationsService(obligations, companies, users, {}, notifications, { transaction: (callback) => callback({ getRepository: () => obligations }) }, audit);
+
+  const result = await service.update(uuid, { companyId: newId, countryId: newId, responsibleUserId: newId }, { id: uuid });
+
+  assert.equal(savedRecord.companyId, newId);
+  assert.equal(savedRecord.countryId, newId);
+  assert.equal(savedRecord.responsibleUserId, newId);
+  for (const relation of ['company', 'country', 'responsibleUser']) assert.equal(relation in savedRecord, false, `${relation} must not be saved`);
+  assert.equal(result.company.name, 'New company');
+  assert.equal(result.responsibleUser.email, 'new@example.local');
+});
