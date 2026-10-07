@@ -3,7 +3,9 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 
-const baseUrl = process.env.TAXFLOW_API_URL || 'http://localhost:' + (process.env.PORT || '3000') + '/api';
+// Set by test/run-e2e.cjs, which runs an isolated backend on a dedicated test database. Never falls back to the development API.
+const baseUrl = process.env.TAXFLOW_API_URL;
+if (!baseUrl) throw new Error('TAXFLOW_API_URL is not set: run E2E tests with "npm run test:e2e".');
 const password = process.env.SEED_USER_PASSWORD;
 const missingId = '00000000-0000-4000-8000-000000000000';
 const validPdf = Buffer.from('%PDF-1.7\nTaxFlow document integration check\n%%EOF\n');
