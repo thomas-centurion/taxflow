@@ -1,5 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
+const { UsersService } = require('../dist/users/users.service');
 const { UserRole } = require('../dist/users/user-role.enum');
 const { CompaniesService } = require('../dist/companies/companies.service');
 
@@ -7,6 +8,61 @@ const audit = { record: async () => undefined };
 const ADMIN_ID = '11111111-1111-4111-8111-111111111111';
 const OTHER_ADMIN_ID = '22222222-2222-4222-8222-222222222222';
 const actor = { id: ADMIN_ID, email: 'admin@example.local', role: UserRole.ADMIN };
+
+function usersService({ target, activeAdmins }) {
+  const calls = { saved: false, removed: false, locked: false };
+  const builder = {
+    addSelect() { return this; }, where() { return this; },
+    setLock(mode) { calls.locked = mode === 'pessimistic_write'; return this; },
+    getOne: async () => ({ ...target, passwordHash: 'hash' }),
+    getMany: async () => activeAdmins,
+  };
+  const repository = {
+    createQueryBuilder: () => builder,
+    findOneBy: async () => ({ ...target }),
+    save: async (record) => { calls.saved = true; return record; },
+    remove: async () => { calls.removed = true; },
+  };
+  const service = new UsersService(repository, { transaction: (callback) => callback({ getRepository: () => repository }) }, audit);
+  return { service, calls };
+}
+
+const lastAdmin = { id: ADMIN_ID, role: UserRole.ADMIN, isActive: true, firstName: 'A', lastName: 'B', email: 'admin@example.local' };
+
+test('the last active ADMIN cannot be demoted, deactivated or deleted, including by itself', async () => {
+  for (const input of [{ role: UserRole.ANALYST }, { role: UserRole.TAX_MANAGER }, { isActive: false }, { role: UserRole.ANALYST, isActive: false }]) {
+    const { service, calls } = usersService({ target: lastAdmin, activeAdmins: [lastAdmin] });
+    await assert.rejects(() => service.update(ADMIN_ID, input, actor), { status: 409 }, JSON.stringify(input));
+    assert.equal(calls.saved, false);
+    assert.equal(calls.locked, true, 'active admins are locked while checking');
+  }
+  const { service, calls } = usersService({ target: lastAdmin, activeAdmins: [lastAdmin] });
+  await assert.rejects(() => service.remove(ADMIN_ID, { ...actor, id: OTHER_ADMIN_ID }), { status: 409 });
+  assert.equal(calls.removed, false);
+});
+
+test('ADMIN changes are allowed while another active ADMIN remains', async () => {
+  const other = { ...lastAdmin, id: OTHER_ADMIN_ID };
+  const demote = usersService({ target: lastAdmin, activeAdmins: [lastAdmin, other] });
+  await demote.service.update(ADMIN_ID, { role: UserRole.ANALYST }, actor);
+  assert.equal(demote.calls.saved, true);
+  const remove = usersService({ target: lastAdmin, activeAdmins: [lastAdmin, other] });
+  await remove.service.remove(ADMIN_ID, { ...actor, id: OTHER_ADMIN_ID });
+  assert.equal(remove.calls.removed, true);
+});
+
+test('changes that keep the ADMIN active, or target non-admins and inactive admins, skip the admin check', async () => {
+  const rename = usersService({ target: lastAdmin, activeAdmins: [lastAdmin] });
+  await rename.service.update(ADMIN_ID, { firstName: 'Renamed' }, actor);
+  assert.equal(rename.calls.saved, true);
+  assert.equal(rename.calls.locked, false);
+  const analyst = usersService({ target: { ...lastAdmin, role: UserRole.ANALYST }, activeAdmins: [] });
+  await analyst.service.update(ADMIN_ID, { isActive: false }, actor);
+  assert.equal(analyst.calls.saved, true);
+  const inactiveAdmin = usersService({ target: { ...lastAdmin, isActive: false }, activeAdmins: [] });
+  await inactiveAdmin.service.update(ADMIN_ID, { role: UserRole.ANALYST }, actor);
+  assert.equal(inactiveAdmin.calls.saved, true);
+});
 
 function companiesService({ hasObligations }) {
   const existing = { id: ADMIN_ID, name: 'ACME', taxId: 'T-1', countryId: 'old-country', email: null, phone: null, isActive: true, country: { id: 'old-country', code: 'AR' } };
