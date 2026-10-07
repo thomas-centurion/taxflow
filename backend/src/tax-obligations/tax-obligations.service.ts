@@ -7,6 +7,8 @@ import { PaginatedResult, paginationMeta } from '../common/pagination-query.dto'
 import { User } from '../users/user.entity';
 import { Document } from '../documents/document.entity';
 import { TaxObligation } from './tax-obligation.entity';
+import { TaxObligationStatus } from './tax-obligation-status.enum';
+import { statusChangeError, todayKey } from './tax-obligation-rules';
 import { CreateTaxObligationDto } from './dto/create-tax-obligation.dto';
 import { TaxObligationQueryDto } from './dto/tax-obligation-query.dto';
 import { UpdateTaxObligationDto } from './dto/update-tax-obligation.dto';
@@ -64,7 +66,13 @@ export class TaxObligationsService {
     }
   }
 
+  private assertStatusChange(previousStatus: TaxObligationStatus | null, nextStatus: TaxObligationStatus, dueDate: string): void {
+    const error = statusChangeError(previousStatus, nextStatus, dueDate, todayKey());
+    if (error) throw new ConflictException(error);
+  }
+
   async create(input: CreateTaxObligationDto, actor: AuthUser): Promise<TaxObligation> {
+    this.assertStatusChange(null, input.status ?? TaxObligationStatus.PENDING, input.dueDate);
     await this.validateRelations(input.companyId, input.countryId, input.responsibleUserId);
     try { return await this.dataSource.transaction(async (manager) => {
       const repository = manager.getRepository(TaxObligation);
@@ -88,6 +96,7 @@ export class TaxObligationsService {
       if (!current) throw new NotFoundException('Tax obligation not found.');
       const changes = diffFields(current, input, OBLIGATION_FIELDS);
       if (!Object.keys(changes).length) return current;
+      if (changes.status || changes.dueDate) this.assertStatusChange(current.status, input.status ?? current.status, input.dueDate ?? current.dueDate);
       const saved = await repository.save({ ...current, ...input, responsibleUserId });
       await this.audit.record({ actor, action: AuditAction.UPDATE, entity: 'TaxObligation', entityId: id, metadata: { changes } }, manager);
       if (changes.status) await this.notifications.notifyStatusChanged({ ...saved, responsibleUserId }, String(changes.status.before), manager);
