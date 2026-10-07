@@ -1,0 +1,56 @@
+<h2 mat-dialog-title>{{ isEdit ? 'Editar empresa' : 'Nueva empresa' }}</h2>
+
+<form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <mat-dialog-content>
+    @if (error()) {
+      <div class="tf-form-error" role="alert"><mat-icon aria-hidden="true">error</mat-icon><span>{{ error() }}</span></div>
+    }
+
+    <div class="tf-form-grid">
+      <mat-form-field appearance="outline" class="tf-span-2">
+        <mat-label>Razón social</mat-label>
+        <input matInput formControlName="name" maxlength="200" cdkFocusInitial>
+        <mat-error>Ingresá el nombre de la empresa.</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Identificador fiscal</mat-label>
+        <input matInput formControlName="taxId" maxlength="100" placeholder="CUIT, CNPJ, NIF…">
+        <mat-hint>Único por país.</mat-hint>
+        <mat-error>Ingresá el identificador fiscal.</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>País</mat-label>
+        <mat-select formControlName="countryId">
+          @for (country of data.countries; track country.id) { <mat-option [value]="country.id">{{ country.name }} ({{ country.code }})</mat-option> }
+        </mat-select>
+        @if (isEdit) { <mat-hint>No se puede cambiar si la empresa ya tiene obligaciones.</mat-hint> }
+        <mat-error>Elegí el país de la empresa.</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Email de contacto (opcional)</mat-label>
+        <input matInput type="email" formControlName="email" maxlength="254" autocomplete="off">
+        <mat-error>Ingresá un email válido.</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Teléfono (opcional)</mat-label>
+        <input matInput type="tel" formControlName="phone" maxlength="40" autocomplete="off">
+      </mat-form-field>
+
+      <div class="tf-span-2 tf-toggle-row">
+        <mat-slide-toggle formControlName="isActive">Empresa activa</mat-slide-toggle>
+        <span class="tf-muted">Solo las empresas activas se pueden elegir al crear obligaciones.</span>
+      </div>
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close [disabled]="saving()">Cancelar</button>
+    <button mat-flat-button type="submit" [disabled]="saving()">
+      @if (saving()) { <mat-spinner diameter="18" aria-label="Guardando" /> } @else { {{ isEdit ? 'Guardar cambios' : 'Crear empresa' }} }
+    </button>
+  </mat-dialog-actions>
+</form>

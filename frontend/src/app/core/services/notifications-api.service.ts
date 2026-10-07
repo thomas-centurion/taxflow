@@ -19,8 +19,9 @@ export class NotificationsApiService {
   }
 
   unreadCount(): Observable<number> { return this.http.get<number>(`${API_BASE_URL}/notifications/unread-count`); }
+  /** Best-effort refresh of the shared unread badge; a failed refresh keeps the last known value. */
   refreshUnreadCount(): void {
-    this.unreadCount().subscribe({ next: (count) => this.unreadCountSubject.next(count) });
+    this.unreadCount().subscribe({ next: (count) => this.unreadCountSubject.next(count), error: () => undefined });
   }
   markRead(id: string): Observable<TaxNotification> { return this.http.patch<TaxNotification>(`${API_BASE_URL}/notifications/${id}/read`, {}); }
   markAllRead(): Observable<{ updated: number }> { return this.http.patch<{ updated: number }>(`${API_BASE_URL}/notifications/read-all`, {}); }

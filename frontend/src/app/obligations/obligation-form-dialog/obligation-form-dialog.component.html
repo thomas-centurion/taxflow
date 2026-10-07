@@ -1,0 +1,74 @@
+<h2 mat-dialog-title>{{ isEdit ? 'Editar obligación fiscal' : 'Nueva obligación fiscal' }}</h2>
+
+<form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <mat-dialog-content>
+    @if (error()) {
+      <div class="tf-form-error" role="alert"><mat-icon aria-hidden="true">error</mat-icon><span>{{ error() }}</span></div>
+    }
+
+    <div class="tf-form-grid">
+      <mat-form-field appearance="outline" class="tf-span-2">
+        <mat-label>Nombre</mat-label>
+        <input matInput formControlName="name" maxlength="200" placeholder="Ej.: IVA mensual — octubre" cdkFocusInitial>
+        @if (form.controls.name.hasError('required')) { <mat-error>Ingresá un nombre que identifique la obligación.</mat-error> }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Empresa</mat-label>
+        <mat-select formControlName="companyId">
+          @for (company of companies; track company.id) {
+            <mat-option [value]="company.id">{{ company.name }}{{ company.isActive ? '' : ' (inactiva)' }}</mat-option>
+          }
+        </mat-select>
+        @if (country(); as selectedCountry) {
+          <mat-hint>País: {{ selectedCountry.name }} ({{ selectedCountry.code }})</mat-hint>
+        } @else {
+          <mat-hint>El país se toma de la empresa.</mat-hint>
+        }
+        <mat-error>Elegí la empresa obligada.</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Tipo de impuesto</mat-label>
+        <mat-select formControlName="type">
+          @for (option of typeOptions; track option.value) { <mat-option [value]="option.value">{{ option.label }}</mat-option> }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Vencimiento</mat-label>
+        <input matInput type="date" formControlName="dueDate">
+        <mat-error>Elegí la fecha de vencimiento.</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Estado</mat-label>
+        <mat-select formControlName="status">
+          @for (option of statusOptions; track option.value) { <mat-option [value]="option.value">{{ option.label }}</mat-option> }
+        </mat-select>
+        <mat-hint>{{ statusHint() }}</mat-hint>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="tf-span-2">
+        <mat-label>Responsable</mat-label>
+        <mat-select formControlName="responsibleUserId">
+          <mat-option [value]="null">Sin asignar</mat-option>
+          @for (user of users; track user.id) { <mat-option [value]="user.id">{{ user.firstName }} {{ user.lastName }} · {{ user.email }}</mat-option> }
+        </mat-select>
+        <mat-hint>Recibe los avisos de vencimiento y de cambios de estado.</mat-hint>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="tf-span-2">
+        <mat-label>Descripción (opcional)</mat-label>
+        <textarea matInput rows="3" formControlName="description" placeholder="Detalles útiles para quien la prepare"></textarea>
+      </mat-form-field>
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close [disabled]="saving()">Cancelar</button>
+    <button mat-flat-button type="submit" [disabled]="saving()">
+      @if (saving()) { <mat-spinner diameter="18" aria-label="Guardando" /> } @else { {{ isEdit ? 'Guardar cambios' : 'Crear obligación' }} }
+    </button>
+  </mat-dialog-actions>
+</form>

@@ -1,0 +1,67 @@
+@use '@angular/material' as mat;
+
+// Angular Material 3 theme: azure primary, Inter typography, compact form fields for data-dense screens.
+html {
+  color-scheme: light;
+  @include mat.theme((
+    color: (primary: mat.$azure-palette, tertiary: mat.$blue-palette, theme-type: light),
+    typography: (plain-family: 'Inter, "Segoe UI", system-ui, sans-serif', brand-family: 'Inter, "Segoe UI", system-ui, sans-serif'),
+    density: 0,
+  ));
+  @include mat.form-field-density(-3);
+  @include mat.select-density(-3);
+  @include mat.paginator-density(-2);
+
+  @include mat.card-overrides((
+    elevated-container-elevation: none,
+    outlined-container-shape: 12px,
+    outlined-outline-color: var(--tf-line),
+  ));
+  @include mat.table-overrides((
+    background-color: var(--tf-surface),
+    header-headline-color: var(--tf-ink-500),
+    header-headline-size: 12px,
+    header-headline-weight: 600,
+    row-item-label-text-color: var(--tf-ink-700),
+    row-item-label-text-size: 13px,
+    row-item-outline-color: var(--tf-line-soft),
+    header-container-height: 44px,
+    row-item-container-height: 56px,
+  ));
+  @include mat.dialog-overrides((
+    container-shape: 14px,
+    headline-padding: 22px 24px 6px,
+    content-padding: 8px 24px 4px,
+    with-actions-content-padding: 8px 24px 4px,
+    actions-padding: 12px 24px 20px,
+  ));
+  @include mat.paginator-overrides((container-background-color: transparent));
+  @include mat.snack-bar-overrides((
+    container-color: var(--tf-ink-900),
+    supporting-text-color: #fff,
+    button-color: #9cc3ff,
+  ));
+  @include mat.button-overrides((
+    filled-container-shape: 8px,
+    outlined-container-shape: 8px,
+    text-container-shape: 8px,
+    filled-label-text-weight: 600,
+    outlined-label-text-weight: 600,
+    outlined-outline-color: var(--tf-line),
+  ));
+  @include mat.tooltip-overrides((supporting-text-size: 12px));
+}
+
+.mat-mdc-form-field-subscript-wrapper { font-size: 12px; }
+.mat-mdc-icon-button .mat-icon { font-size: 20px; width: 20px; height: 20px; }
+
+// Snack bar variants used by FeedbackService.
+.tf-snack-success { --mat-snack-bar-button-color: #8fe3b6; }
+.tf-snack-error { --mat-snack-bar-container-color: #5c1611; --mat-snack-bar-button-color: #ffc2bc; }
+
+// Destructive actions keep Material's semantics but use the product danger color.
+.mat-mdc-unelevated-button.tf-danger:not(:disabled) { background: var(--tf-danger); color: #fff; }
+.mat-mdc-icon-button.tf-danger-icon:not(:disabled) { color: var(--tf-danger); }
+
+// Notifications dropdown in the top bar needs room for two-line messages.
+.mat-mdc-menu-panel.tf-notification-menu { width: 380px; max-width: calc(100vw - 24px); }

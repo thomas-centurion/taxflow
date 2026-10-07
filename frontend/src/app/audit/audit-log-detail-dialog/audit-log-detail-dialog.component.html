@@ -1,0 +1,39 @@
+<h2 mat-dialog-title>
+  <span class="tf-badge tf-badge-plain" [attr.data-tone]="action.tone">{{ action.label }}</span>
+  {{ entity }}
+</h2>
+
+<mat-dialog-content>
+  <dl class="tf-dl identity">
+    <div><dt>Quién</dt><dd>{{ actor }}@if (log.actor && log.actorEmail) { <span class="email">{{ log.actorEmail }}</span> }</dd></div>
+    <div><dt>Cuándo</dt><dd>{{ log.createdAt | date: 'dd/MM/yyyy HH:mm:ss' }}</dd></div>
+    <div class="tf-dl-wide"><dt>ID del registro</dt><dd class="tf-mono">{{ log.entityId || '—' }}</dd></div>
+  </dl>
+
+  @if (changes.length) {
+    <h3>Cambios</h3>
+    <table class="tf-table changes">
+      <thead><tr><th scope="col">Campo</th><th scope="col">Antes</th><th scope="col">Después</th></tr></thead>
+      <tbody>
+        @for (change of changes; track change.field) {
+          <tr><th scope="row">{{ change.label }}</th><td class="before">{{ change.before }}</td><td class="after">{{ change.after }}</td></tr>
+        }
+      </tbody>
+    </table>
+  }
+
+  @if (details.length) {
+    <h3>{{ changes.length ? 'Otros datos' : 'Datos del evento' }}</h3>
+    <dl class="tf-dl details">
+      @for (item of details; track item.label) { <div><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div> }
+    </dl>
+  }
+
+  @if (!changes.length && !details.length) {
+    <p class="tf-muted">Este evento no registra datos adicionales.</p>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-flat-button type="button" mat-dialog-close>Cerrar</button>
+</mat-dialog-actions>

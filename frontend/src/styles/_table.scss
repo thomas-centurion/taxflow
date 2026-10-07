@@ -1,0 +1,39 @@
+// Data tables (mat-table and plain <table>) share one visual language.
+
+.tf-table-scroll { overflow-x: auto; }
+
+.tf-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    text-align: left;
+    white-space: nowrap;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--tf-ink-500);
+    background: var(--tf-surface-muted);
+  }
+
+  td { font-size: 13px; color: var(--tf-ink-700); }
+
+  // Plain HTML tables (dashboard, documents) mirror the mat-table metrics.
+  &:not(.mat-mdc-table) {
+    th { padding: 11px 16px; border-bottom: 1px solid var(--tf-line); }
+    td { padding: 13px 16px; border-bottom: 1px solid var(--tf-line-soft); }
+    tbody tr:last-child td { border-bottom: 0; }
+  }
+
+  .mat-mdc-header-cell:first-child, .mat-mdc-cell:first-child { padding-left: 20px; }
+  .mat-mdc-header-cell:last-child, .mat-mdc-cell:last-child { padding-right: 16px; }
+
+  tbody tr:hover td, .mat-mdc-row:hover .mat-mdc-cell { background: #fafbfd; }
+
+  .tf-cell-actions { text-align: right; white-space: nowrap; width: 1%; }
+}
+
+.tf-table-footer { border-top: 1px solid var(--tf-line-soft); }
+
+// Two-line cells (title + secondary detail), also used in lists outside tables.
+.tf-cell-primary { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tf-cell-secondary { font-size: 12px; color: var(--tf-ink-500); }
