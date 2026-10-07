@@ -11,6 +11,7 @@ export function apiErrorMessage(error: unknown, fallback = 'No se pudo completar
     return typeof body?.message === 'string' ? body.message : 'Ya existe un registro con esos datos o hay información relacionada.';
   }
   if (error.status === 413) return 'El archivo supera el tamaño máximo permitido de 10 MB.';
+  if (error.status === 429) return 'Demasiados intentos. Esperá un minuto e intentá nuevamente.';
   if (error.status >= 500) return 'Ocurrió un error en el servidor. Intentá nuevamente.';
   if (error.status === 400) {
     const body = error.error as { message?: string | string[] } | null;

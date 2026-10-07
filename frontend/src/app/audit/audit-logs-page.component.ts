@@ -18,7 +18,7 @@ import { AuditAction, AuditLog } from '../shared/models/audit-log.model';
 import { User } from '../shared/models/user.model';
 import { AuditLogDetailDialogComponent } from './audit-log-detail-dialog.component';
 
-const ACTIONS: AuditAction[] = ['CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'UPLOAD', 'DOWNLOAD', 'MARK_READ', 'NOTIFICATION_CREATED'];
+const ACTIONS: AuditAction[] = ['CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'LOGIN_FAILED', 'LOGOUT', 'UPLOAD', 'DOWNLOAD', 'MARK_READ', 'NOTIFICATION_CREATED'];
 const ENTITIES = ['User', 'Company', 'Country', 'TaxObligation', 'Document', 'Notification'];
 
 @Component({
