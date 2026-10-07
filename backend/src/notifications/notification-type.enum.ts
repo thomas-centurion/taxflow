@@ -1,0 +1,1 @@
+export enum NotificationType { DEADLINE = 'DEADLINE', SYSTEM = 'SYSTEM', DOCUMENT = 'DOCUMENT', AUTOMATION = 'AUTOMATION' }

@@ -1,0 +1,1 @@
+export enum UserRole { ADMIN = 'ADMIN', TAX_MANAGER = 'TAX_MANAGER', ANALYST = 'ANALYST' }

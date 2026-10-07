@@ -1,0 +1,49 @@
+{
+    "name": "@taxflow/backend",
+    "version": "0.1.0",
+    "private": true,
+    "scripts": {
+        "build": "nest build",
+        "start": "nest start",
+        "start:dev": "nest start --watch",
+        "migration:run": "typeorm-ts-node-commonjs -d src/database/data-source.ts migration:run",
+        "migration:show": "typeorm-ts-node-commonjs -d src/database/data-source.ts migration:show",
+        "migration:revert": "typeorm-ts-node-commonjs -d src/database/data-source.ts migration:revert",
+        "db:seed": "ts-node src/database/seed.ts",
+        "db:setup": "npm run migration:run && npm run db:seed",
+        "test": "npm run build && node --test test/*.test.cjs",
+        "test:e2e": "node --test --test-concurrency=1 test/*.e2e.cjs"
+    },
+    "dependencies": {
+        "@nestjs/common": "^11.0.0",
+        "@nestjs/config": "^4.0.0",
+        "@nestjs/core": "^11.0.0",
+        "@nestjs/jwt": "^12.0.2",
+        "@nestjs/passport": "^12.0.0",
+        "@nestjs/platform-express": "^11.0.0",
+        "@nestjs/schedule": "^12.0.2",
+        "@nestjs/typeorm": "^11.0.0",
+        "bcrypt": "^6.0.0",
+        "class-transformer": "^0.5.1",
+        "class-validator": "^0.15.1",
+        "dotenv": "^18.0.5",
+        "helmet": "^8.0.0",
+        "passport": "^0.7.0",
+        "passport-jwt": "^4.0.1",
+        "pg": "^8.13.0",
+        "reflect-metadata": "^0.2.2",
+        "rxjs": "^7.8.1",
+        "typeorm": "^0.3.20"
+    },
+    "devDependencies": {
+        "@nestjs/cli": "^11.0.0",
+        "@nestjs/schematics": "^11.0.0",
+        "@nestjs/testing": "^11.0.0",
+        "@types/bcrypt": "^6.0.0",
+        "@types/express": "^5.0.0",
+        "@types/node": "^22.0.0",
+        "@types/passport-jwt": "^4.0.1",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.7.0"
+    }
+}

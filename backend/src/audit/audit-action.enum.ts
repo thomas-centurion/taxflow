@@ -1,0 +1,13 @@
+export enum AuditAction {
+  CREATE = 'CREATE',
+  UPDATE = 'UPDATE',
+  DELETE = 'DELETE',
+  LOGIN = 'LOGIN',
+  LOGOUT = 'LOGOUT',
+  UPLOAD = 'UPLOAD',
+  DOWNLOAD = 'DOWNLOAD',
+  MARK_READ = 'MARK_READ',
+  NOTIFICATION_CREATED = 'NOTIFICATION_CREATED',
+}
+
+export type AuditActorType = 'USER' | 'SYSTEM';
