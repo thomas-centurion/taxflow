@@ -186,9 +186,8 @@ These cloud integrations are part of the project roadmap and are not currently i
 
 ### Testing
 
-- Jest
-- Supertest
-- Integration/E2E tests
+- Node.js built-in test runner (`node:test`)
+- HTTP E2E tests (`fetch`) against an isolated test database
 
 ### Planned
 
@@ -212,6 +211,12 @@ TaxFlow currently defines three roles:
 | `ANALYST` | Read-only access |
 
 The backend is the source of truth for authorization. Frontend controls are only a UX layer.
+
+User administration rules:
+
+- `GET /api/users` and `GET /api/users/:id` are limited to `ADMIN` and `TAX_MANAGER`. Creating, updating and deleting users is `ADMIN` only.
+- `GET /api/users/options` is available to every authenticated role and returns only `id`, `firstName`, `lastName` and `email` of active users, for responsible-user pickers and filters.
+- The system always keeps at least one active `ADMIN`: demoting, deactivating or deleting the last active `ADMIN` (including yourself) is rejected with `409 Conflict`.
 
 ---
 
@@ -274,20 +279,13 @@ The seed creates development data including:
 - 4 fictitious companies
 - Sample tax obligations in different states
 
-The seed is idempotent.
+The seed only inserts missing records and never modifies existing ones, so it is safe to run repeatedly. It only runs with `NODE_ENV=development` or `NODE_ENV=test` and refuses any other value, including an unset `NODE_ENV`.
 
 ### 6. Start the backend
 
-The default configuration uses port `3000`.
+The development backend uses port `3002` (`PORT` in `.env`; also the default when `PORT` is not set).
 
 ```powershell
-npm --prefix backend run start:dev
-```
-
-If port `3000` is already in use:
-
-```powershell
-$env:PORT = '3002'
 npm --prefix backend run start:dev
 ```
 
@@ -324,6 +322,8 @@ The Angular API configuration is centralized in:
 frontend/src/app/core/config/api.config.ts
 ```
 
+It points to `http://localhost:3002/api`. If you change the backend `PORT`, update this file as well.
+
 ---
 
 ## Environment Variables
@@ -339,7 +339,7 @@ DATABASE_NAME=taxflow
 DATABASE_USER=taxflow
 DATABASE_PASSWORD=taxflow_dev_only
 
-PORT=3000
+PORT=3002
 FRONTEND_ORIGIN=http://localhost:4200
 
 STORAGE_LOCAL_PATH=./storage
@@ -349,6 +349,10 @@ SEED_USER_PASSWORD=Admin123!
 
 JWT_SECRET=replace-this-with-a-random-secret-of-at-least-32-bytes
 JWT_EXPIRES_IN=1d
+
+# Optional: login rate limit per client IP + email (defaults shown)
+LOGIN_THROTTLE_LIMIT=5
+LOGIN_THROTTLE_TTL_SECONDS=60
 ```
 
 Do not commit `.env`.
@@ -400,6 +404,8 @@ Example:
 ```
 
 The API returns a Bearer token and an authenticated user profile without password hashes.
+
+Login is rate limited per client IP and email (default: 5 attempts per 60 seconds, configurable with `LOGIN_THROTTLE_LIMIT` and `LOGIN_THROTTLE_TTL_SECONDS`). Exceeding the limit returns `429 Too Many Requests`. Invalid credentials always return the same generic `401` message, and failed attempts are audited as `LOGIN_FAILED` without passwords (the attempted email is stored only when it belongs to an existing account). Other endpoints are not rate limited.
 
 ### Current User
 
@@ -682,6 +688,8 @@ Available filters:
 - Date from
 - Date to
 
+`dateFrom` and `dateTo` must use the `YYYY-MM-DD` format and are inclusive calendar days in the backend process timezone. Datetimes, invalid dates and ranges where `dateFrom` is after `dateTo` return `400 Bad Request`.
+
 Example:
 
 ```text
@@ -708,6 +716,7 @@ CREATE
 UPDATE
 DELETE
 LOGIN
+LOGIN_FAILED
 LOGOUT
 UPLOAD
 DOWNLOAD
@@ -800,7 +809,14 @@ Initialize the local schema and development seed:
 npm --prefix backend run db:setup
 ```
 
-The seed is idempotent and safe to run repeatedly in the local development environment.
+The seed only inserts missing records (it never changes passwords, roles, active flags, statuses or due dates of existing data), is safe to run repeatedly in the local development environment, and only runs with `NODE_ENV=development` or `NODE_ENV=test` (any other value, including an unset `NODE_ENV`, is refused).
+
+## Dates and Timezone
+
+- `dueDate` is a PostgreSQL `date` (calendar day, no time or timezone), exchanged as `YYYY-MM-DD`.
+- "Today" is the calendar date of the backend process timezone. The overdue rule, the deadline scheduler, the `isOverdue` API field, the seed and the audit-log date filters all use this same reference.
+- The frontend displays due dates as calendar days without timezone conversion and does not recompute overdue status.
+- Event timestamps (`createdAt`, `updatedAt`) are `timestamptz` and are displayed in the browser's local time.
 
 ---
 
@@ -818,6 +834,15 @@ Backend integration/E2E tests:
 npm --prefix backend run test:e2e
 ```
 
+The E2E runner (`backend/test/run-e2e.cjs`) never uses the development database or API. On every run it:
+
+1. drops and recreates a disposable `<DATABASE_NAME>_test` database (`taxflow_test` by default) on the same PostgreSQL server,
+2. applies the migrations and the seed to it,
+3. starts a dedicated backend on port `3100` (`E2E_PORT`) with temporary document storage,
+4. runs every `backend/test/*.e2e.cjs` file and stops the backend.
+
+PostgreSQL must be running (`docker compose up -d postgres`). The development backend can keep running on `3002`. E2E files refuse to run without the runner-provided `TAXFLOW_API_URL`.
+
 Backend build:
 
 ```powershell
@@ -830,7 +855,7 @@ Frontend build:
 npm --prefix frontend run build
 ```
 
-The test suite currently covers authentication, authorization, CRUD operations, documents, notifications, deadline automation and audit logging.
+The test suite currently covers authentication, login rate limiting, authorization, CRUD operations, relation integrity, status transitions, documents, notifications, deadline automation, audit logging and seed safety.
 
 Frontend component/browser testing is not currently implemented as a full automated suite.
 
@@ -842,7 +867,7 @@ TaxFlow is currently under active development.
 
 The first nine phases of the project have been completed, covering the core platform, authentication, REST API, Angular frontend, dashboard, document management, notifications, automation and audit logging.
 
-Phases 10–13 are currently in progress and will extend the project with browser automation, expanded testing and documentation, production hardening and Azure-based infrastructure.
+Phases 10–13 are planned and will extend the project with browser automation, expanded testing and documentation, production hardening and Azure-based infrastructure. A pre-Phase 10 stabilization pass has already added isolated E2E tests and some hardening (login rate limiting, last-admin protection, safe seed), but those phases have not started as such.
 
 ## Completed Phases
 
@@ -856,7 +881,7 @@ Phases 10–13 are currently in progress and will extend the project with browse
 - [x] Phase 8 — Notifications & Automation
 - [x] Phase 9 — Audit Logs
 
-## In Progress
+## Planned
 
 - [ ] Phase 10 — Puppeteer Automation
 - [ ] Phase 11 — Testing & API Documentation
@@ -909,25 +934,25 @@ Persistent audit trail, business event tracking and audit visualization.
 
 Browser-based automation against a controlled mock tax portal.
 
-**Status: In progress**
+**Status: Planned**
 
 ### Phase 11 — Testing & API Documentation
 
 Expanded automated testing, API documentation with Swagger and developer experience improvements.
 
-**Status: In progress**
+**Status: Planned**
 
 ### Phase 12 — Release Hardening
 
 Security review, configuration review, Docker improvements and production-readiness work.
 
-**Status: In progress**
+**Status: Planned**
 
 ### Phase 13 — Azure Architecture
 
 Migration toward Azure services such as Blob Storage, Functions, Service Bus, Entra ID and Azure DevOps CI/CD.
 
-**Status: In progress**
+**Status: Planned**
 
 # License
 
