@@ -7,6 +7,7 @@ const { UserRole } = require('../dist/users/user-role.enum');
 const { ROLES_KEY } = require('../dist/auth/roles.decorator');
 const { AuthService } = require('../dist/auth/auth.service');
 const { LoginThrottlerGuard } = require('../dist/auth/login-throttler.guard');
+const { AuditLogService, startOfLocalDay } = require('../dist/audit/audit-log.service');
 const { CompaniesService } = require('../dist/companies/companies.service');
 
 const audit = { record: async () => undefined };
@@ -113,6 +114,16 @@ test('failed logins are audited without passwords or unknown emails and always r
   await inactive.run(() => assert.rejects(() => inactive.service.login({ email: 'inactive@example.local', password: 'Correct123!' }), { status: 401, message: 'Invalid credentials' }));
   assert.equal(inactive.compared(), 1);
   assert.deepEqual(inactive.events[0].metadata, { email: 'inactive@example.local' });
+});
+
+test('audit date filters use local calendar days and reject inverted ranges', async () => {
+  assert.equal(startOfLocalDay('2026-10-07').getTime(), new Date(2026, 9, 7).getTime());
+  assert.equal(startOfLocalDay('2026-12-31', 1).getTime(), new Date(2027, 0, 1).getTime());
+  assert.equal(startOfLocalDay('2028-02-28', 1).getTime(), new Date(2028, 1, 29).getTime());
+  const builder = { leftJoinAndSelect() { return this; }, andWhere() { return this; }, orderBy() { return this; }, addOrderBy() { return this; }, skip() { return this; }, take() { return this; }, getManyAndCount: async () => [[], 0] };
+  const service = new AuditLogService({ createQueryBuilder: () => builder });
+  await assert.rejects(() => service.findAll({ page: 1, limit: 20, dateFrom: '2026-10-08', dateTo: '2026-10-01' }, UserRole.ADMIN), { status: 400 });
+  await service.findAll({ page: 1, limit: 20, dateFrom: '2026-10-07', dateTo: '2026-10-07' }, UserRole.ADMIN);
 });
 
 function companiesService({ hasObligations }) {
