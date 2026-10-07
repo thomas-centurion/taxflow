@@ -26,7 +26,7 @@ import { EditorDialogComponent, EditorResult } from '../shared/components/editor
 import { Company } from '../shared/models/company.model';
 import { Country } from '../shared/models/country.model';
 import { TaxObligation, TaxObligationInput, TaxObligationStatus, TaxObligationType } from '../shared/models/tax-obligation.model';
-import { User } from '../shared/models/user.model';
+import { UserOption } from '../shared/models/user.model';
 
 
 const OBLIGATION_STYLES = `:host{display:block}.page-head{display:flex;justify-content:space-between;align-items:center;gap:16px;margin:0 0 22px}.eyebrow{margin:0 0 6px;color:#7b899a;font-size:10px;font-weight:700;letter-spacing:.13em}.page-head h1{margin:0;color:#1e3045;font-size:27px;letter-spacing:-.025em}.subtitle{margin:7px 0 0;color:#6b7a8d;font-size:13px}.page-head button{height:42px}.page-head button mat-icon{margin-right:5px}.panel{background:#fff;border:1px solid #e2e7ed;border-radius:10px;overflow:hidden}.filters{display:grid;grid-template-columns:repeat(3,minmax(130px,1fr));gap:0 12px;padding:18px 20px 0;border-bottom:1px solid #edf0f3}.filters mat-form-field{width:100%}.filters button{height:46px;margin:1px 0 22px;align-self:start}.filters button mat-icon{margin-right:4px}.table-scroll{overflow-x:auto}.data-table{width:100%;min-width:1040px}.data-table th{font-size:11px;color:#718094;font-weight:600;background:#fbfcfd}.data-table td{font-size:12px;color:#3c4b5e}.data-table td strong{color:#24364b;font-weight:600}.actions-head{text-align:right;padding-right:26px}.actions{text-align:right;white-space:nowrap}.actions button{width:36px;height:36px}.actions mat-icon{font-size:19px}.status{display:inline-flex;padding:4px 9px;border-radius:20px;background:#f2f4f6;color:#596a7d;font-size:10px;white-space:nowrap}.status.pending{background:#fff4df;color:#9a6818}.status.in_progress{background:#e9f1fc;color:#33649c}.status.submitted{background:#e9f5f3;color:#28736a}.status.approved{background:#e8f5ed;color:#26734b}.status.overdue{background:#ffebe9;color:#aa4037}.status.cancelled{background:#f1f2f4;color:#747e89}.loading-state,.empty-state{min-height:190px;display:flex;align-items:center;justify-content:center;gap:12px;color:#6c7a8c;font-size:13px}.empty-state{flex-direction:column;gap:7px}.empty-state strong{color:#36485d}.error-state{padding:18px;display:flex;align-items:center;gap:9px;color:#ac4136;background:#fff4f2;font-size:13px}.error-state button{margin-left:auto}.mat-mdc-paginator{border-top:1px solid #edf0f3}@media(max-width:850px){.filters{grid-template-columns:repeat(2,minmax(130px,1fr))}}@media(max-width:600px){.page-head{align-items:flex-start;flex-direction:column}.filters{grid-template-columns:1fr;padding:14px 12px 0}.filters button{margin-bottom:10px}}`;
@@ -74,12 +74,12 @@ export class TaxObligationsPageComponent {
     { value: 'VAT', label: 'IVA' }, { value: 'INCOME_TAX', label: 'Impuesto a las ganancias' }, { value: 'WITHHOLDING', label: 'Retenciones' }, { value: 'PAYROLL_TAX', label: 'Impuesto a la nómina' }, { value: 'OTHER', label: 'Otro' },
   ];
   readonly filters = this.fb.nonNullable.group({ company: '', country: '', status: '', type: '', responsibleUser: '', dueDate: '' });
-  rows: TaxObligation[] = []; companies: Company[] = []; countries: Country[] = []; users: User[] = []; loading = false; errorMessage = ''; total = 0; pageIndex = 0; pageSize = 20;
+  rows: TaxObligation[] = []; companies: Company[] = []; countries: Country[] = []; users: UserOption[] = []; loading = false; errorMessage = ''; total = 0; pageIndex = 0; pageSize = 20;
   constructor() { this.loadOptions(); this.load(); }
   get canWrite(): boolean { return this.auth.hasRole('ADMIN', 'TAX_MANAGER'); }
   loadOptions(): void {
-    forkJoin({ companies: this.companiesApi.list(1, 100), countries: this.countriesApi.list(1, 100), users: this.usersApi.list(1, 100) }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (response) => { this.companies = response.companies.data.filter((company) => company.isActive); this.countries = response.countries.data; this.users = response.users.data.filter((user) => user.isActive); },
+    forkJoin({ companies: this.companiesApi.list(1, 100), countries: this.countriesApi.list(1, 100), users: this.usersApi.options() }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (response) => { this.companies = response.companies.data.filter((company) => company.isActive); this.countries = response.countries.data; this.users = response.users; },
       error: (error: unknown) => this.snack.open(apiErrorMessage(error, 'No se pudieron cargar las opciones de filtros.'), 'Cerrar', { duration: 5000 }),
     });
   }
@@ -94,10 +94,10 @@ export class TaxObligationsPageComponent {
   statusLabel(status: TaxObligationStatus): string { return this.statuses.find((entry) => entry.value === status)?.label ?? status; }
   typeLabel(type: TaxObligationType): string { return this.types.find((entry) => entry.value === type)?.label ?? type; }
   openEditor(record?: TaxObligation): void {
-    forkJoin({ companies: this.companiesApi.list(1, 100), countries: this.countriesApi.list(1, 100), users: this.usersApi.list(1, 100) }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    forkJoin({ companies: this.companiesApi.list(1, 100), countries: this.countriesApi.list(1, 100), users: this.usersApi.options() }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (options) => {
         const activeCompanies = options.companies.data.filter((company) => company.isActive);
-        const activeUsers = options.users.data.filter((user) => user.isActive);
+        const activeUsers = options.users;
         if (!activeCompanies.length || !options.countries.data.length) { this.snack.open('Necesitás una empresa activa y al menos un país para registrar una obligación.', 'Cerrar', { duration: 4500 }); return; }
         const ref = this.dialog.open(EditorDialogComponent, { width: '720px', maxWidth: '95vw', data: { kind: 'obligation', record, countries: options.countries.data, companies: activeCompanies, users: activeUsers } });
         ref.afterClosed().pipe(filter((value): value is EditorResult => !!value), switchMap((value) => record ? this.api.update(record.id, value as Partial<TaxObligationInput>) : this.api.create(value as TaxObligationInput)), takeUntilDestroyed(this.destroyRef)).subscribe({ next: () => { this.snack.open(record ? 'Obligación actualizada correctamente.' : 'Obligación creada correctamente.', 'Cerrar', { duration: 3000 }); this.notificationsApi.refreshUnreadCount(); this.load(); }, error: (error: unknown) => this.snack.open(apiErrorMessage(error, 'No se pudo guardar la obligación.'), 'Cerrar', { duration: 5000 }) });

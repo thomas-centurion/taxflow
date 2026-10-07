@@ -10,13 +10,13 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { Company } from '../models/company.model';
 import { Country } from '../models/country.model';
 import { TaxObligation, TaxObligationStatus, TaxObligationType } from '../models/tax-obligation.model';
-import { User, UserInput, UserRole } from '../models/user.model';
+import { User, UserInput, UserOption, UserRole } from '../models/user.model';
 import { CompanyInput } from '../models/company.model';
 import { CountryInput } from '../models/country.model';
 import { TaxObligationInput } from '../models/tax-obligation.model';
 
 export type EditorKind = 'user' | 'company' | 'country' | 'obligation';
-export interface EditorDialogData { kind: EditorKind; record?: User | Company | Country | TaxObligation; countries: Country[]; companies: Company[]; users: User[] }
+export interface EditorDialogData { kind: EditorKind; record?: User | Company | Country | TaxObligation; countries: Country[]; companies: Company[]; users: UserOption[] }
 export type EditorResult = UserInput | CompanyInput | CountryInput | TaxObligationInput;
 
 @Component({

@@ -19,3 +19,6 @@ export interface UserInput {
   isActive?: boolean;
   password?: string;
 }
+
+/** Minimal active-user entry for responsible pickers and filters (GET /users/options). */
+export type UserOption = Pick<User, 'id' | 'firstName' | 'lastName' | 'email'>;

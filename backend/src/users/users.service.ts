@@ -16,6 +16,8 @@ import { diffFields, pickFields } from '../audit/audit-changes';
 
 const USER_FIELDS = ['firstName', 'lastName', 'email', 'role', 'isActive'] as const;
 
+export interface UserOption { id: string; firstName: string; lastName: string; email: string }
+
 @Injectable()
 export class UsersService {
   constructor(@InjectRepository(User) private readonly users: Repository<User>, private readonly dataSource: DataSource, private readonly audit: AuditLogService) {}
@@ -25,6 +27,12 @@ export class UsersService {
     if (query.search) builder.andWhere('(user.firstName ILIKE :search OR user.lastName ILIKE :search OR user.email ILIKE :search)', { search: `%${query.search}%` });
     const [data, total] = await builder.orderBy('user.createdAt', 'DESC').skip((query.page - 1) * query.limit).take(query.limit).getManyAndCount();
     return { data, meta: paginationMeta(query.page, query.limit, total) };
+  }
+
+  /** Minimal directory of active users for responsible pickers/filters; exposes no role or account state. */
+  async findOptions(): Promise<UserOption[]> {
+    const users = await this.users.find({ where: { isActive: true }, order: { firstName: 'ASC', lastName: 'ASC' } });
+    return users.map(({ id, firstName, lastName, email }) => ({ id, firstName, lastName, email }));
   }
 
   async findOne(id: string): Promise<User> {
