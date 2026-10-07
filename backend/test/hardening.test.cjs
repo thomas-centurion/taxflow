@@ -9,6 +9,7 @@ const { AuthService } = require('../dist/auth/auth.service');
 const { LoginThrottlerGuard } = require('../dist/auth/login-throttler.guard');
 const { AuditLogService, startOfLocalDay } = require('../dist/audit/audit-log.service');
 const { CompaniesService } = require('../dist/companies/companies.service');
+const { assertSeedAllowed } = require('../dist/database/seed-guard');
 
 const audit = { record: async () => undefined };
 const ADMIN_ID = '11111111-1111-4111-8111-111111111111';
@@ -147,4 +148,14 @@ test('company country changes persist without the stale relation and are blocked
   assert.equal(used.saved(), undefined);
   await used.service.update(ADMIN_ID, { name: 'ACME renamed' }, actor);
   assert.equal(used.saved().name, 'ACME renamed', 'other fields remain editable');
+});
+
+test('the development seed only runs with NODE_ENV=development or NODE_ENV=test and requires a password', () => {
+  assert.equal(assertSeedAllowed({ NODE_ENV: 'development', SEED_USER_PASSWORD: 'x' }), 'x');
+  assert.equal(assertSeedAllowed({ NODE_ENV: 'test', SEED_USER_PASSWORD: 'x' }), 'x');
+  assert.throws(() => assertSeedAllowed({ NODE_ENV: 'production', SEED_USER_PASSWORD: 'x' }), /refusing NODE_ENV=production/);
+  assert.throws(() => assertSeedAllowed({ NODE_ENV: ' Production ', SEED_USER_PASSWORD: 'x' }), /refusing NODE_ENV=production/);
+  assert.throws(() => assertSeedAllowed({ NODE_ENV: 'staging', SEED_USER_PASSWORD: 'x' }), /refusing NODE_ENV=staging/);
+  assert.throws(() => assertSeedAllowed({ SEED_USER_PASSWORD: 'x' }), /refusing NODE_ENV=\(unset\)/);
+  assert.throws(() => assertSeedAllowed({ NODE_ENV: 'development' }), /SEED_USER_PASSWORD/);
 });
