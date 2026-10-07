@@ -1,7 +1,9 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { UsersService } = require('../dist/users/users.service');
+const { UsersController } = require('../dist/users/users.controller');
 const { UserRole } = require('../dist/users/user-role.enum');
+const { ROLES_KEY } = require('../dist/auth/roles.decorator');
 const { CompaniesService } = require('../dist/companies/companies.service');
 
 const audit = { record: async () => undefined };
@@ -62,6 +64,21 @@ test('changes that keep the ADMIN active, or target non-admins and inactive admi
   const inactiveAdmin = usersService({ target: { ...lastAdmin, isActive: false }, activeAdmins: [] });
   await inactiveAdmin.service.update(ADMIN_ID, { role: UserRole.ANALYST }, actor);
   assert.equal(inactiveAdmin.calls.saved, true);
+});
+
+test('user listing is restricted to ADMIN/TAX_MANAGER; options are open to every authenticated role', () => {
+  const roles = (method) => Reflect.getMetadata(ROLES_KEY, UsersController.prototype[method]);
+  assert.deepEqual(roles('findAll'), [UserRole.ADMIN, UserRole.TAX_MANAGER]);
+  assert.deepEqual(roles('findOne'), [UserRole.ADMIN, UserRole.TAX_MANAGER]);
+  assert.equal(roles('findOptions'), undefined);
+});
+
+test('user options expose only active users identity fields', async () => {
+  let where;
+  const repository = { find: async (options) => { where = options.where; return [{ id: ADMIN_ID, firstName: 'A', lastName: 'B', email: 'a@example.local', role: 'ADMIN', isActive: true, createdAt: new Date() }]; } };
+  const options = await new UsersService(repository, {}, audit).findOptions();
+  assert.deepEqual(where, { isActive: true });
+  assert.deepEqual(options, [{ id: ADMIN_ID, firstName: 'A', lastName: 'B', email: 'a@example.local' }]);
 });
 
 function companiesService({ hasObligations }) {
