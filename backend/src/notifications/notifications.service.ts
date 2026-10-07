@@ -68,7 +68,7 @@ export class NotificationsService {
     return this.dataSource.transaction((transaction) => this.insertOnce(input, transaction));
   }
 
-  async notifyStatusChanged(obligation: TaxObligation, previousStatus: string, manager?: EntityManager): Promise<void> {
+  async notifyStatusChanged(obligation: Pick<TaxObligation, 'id' | 'name' | 'status' | 'responsibleUserId' | 'updatedAt'>, previousStatus: string, manager?: EntityManager): Promise<void> {
     if (!obligation.responsibleUserId) return;
     await this.createOnce({
       userId: obligation.responsibleUserId,

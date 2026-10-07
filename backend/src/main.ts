@@ -3,27 +3,9 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
-import { Request, Response, NextFunction } from 'express';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
-
-  app.use((req: Request, res: Response, next: NextFunction) => {
-    const startedAt = Date.now();
-
-    console.log(
-      `[SERVER] → ${req.method} ${req.originalUrl}`,
-    );
-
-    res.on('finish', () => {
-      console.log(
-        `[SERVER] ← ${req.method} ${req.originalUrl} ${res.statusCode} (${Date.now() - startedAt}ms)`,
-      );
-    });
-
-    next();
-  });
-
   const config = app.get(ConfigService);
   const frontendOrigin = config.get<string>(
     'FRONTEND_ORIGIN',

@@ -171,17 +171,15 @@ export class HomePageComponent {
   }
 
   private buildDashboard(companies: { id: string; name: string }[], obligations: TaxObligation[]): NonNullable<DashboardState['data']> {
-    debugger;
-
     const today = this.dateKey(new Date());
     const inThirtyDays = this.addDays(today, 30);
     const counts = Object.fromEntries(STATUSES.map((status) => [status, 0])) as Record<TaxObligationStatus, number>;
     for (const obligation of obligations) counts[obligation.status] += 1;
 
-    const overdue = obligations.filter((obligation) => obligation.status !== 'CANCELLED' &&
-      (obligation.status === 'OVERDUE' || this.dueDateKey(obligation.dueDate) < today))
+    // Overdue state comes from the backend business rule; the frontend does not redefine it.
+    const overdue = obligations.filter((obligation) => obligation.isOverdue)
       .sort((a, b) => this.dueDateKey(a.dueDate).localeCompare(this.dueDateKey(b.dueDate)));
-    const upcoming = obligations.filter((obligation) => ['PENDING', 'IN_PROGRESS'].includes(obligation.status) &&
+    const upcoming = obligations.filter((obligation) => !obligation.isOverdue && ['PENDING', 'IN_PROGRESS'].includes(obligation.status) &&
       this.dueDateKey(obligation.dueDate) >= today && this.dueDateKey(obligation.dueDate) <= inThirtyDays)
       .sort((a, b) => this.dueDateKey(a.dueDate).localeCompare(this.dueDateKey(b.dueDate))).slice(0, 5);
     const total = obligations.length;
@@ -195,7 +193,7 @@ export class HomePageComponent {
       const row = companyMetrics.get(obligation.companyId);
       if (!row) continue;
       if (obligation.status === 'PENDING') row.pending += 1;
-      if (obligation.status !== 'CANCELLED' && (obligation.status === 'OVERDUE' || this.dueDateKey(obligation.dueDate) < today)) row.overdue += 1;
+      if (obligation.isOverdue) row.overdue += 1;
     }
     const companyRows = [...companyMetrics.values()].filter((row) => row.pending || row.overdue)
       .sort((a, b) => b.overdue - a.overdue || b.pending - a.pending || a.name.localeCompare(b.name)).slice(0, 5);

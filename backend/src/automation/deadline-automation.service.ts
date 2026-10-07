@@ -6,6 +6,7 @@ import { TaxObligationStatus } from '../tax-obligations/tax-obligation-status.en
 import { NotificationsService } from '../notifications/notifications.service';
 import { AuditLogService } from '../audit/audit-log.service';
 import { AuditAction } from '../audit/audit-action.enum';
+import { OVERDUE_ELIGIBLE_STATUSES, shouldBecomeOverdue, todayKey } from '../tax-obligations/tax-obligation-rules';
 
 export interface DeadlineCheckResult {
   checked: number;
@@ -27,11 +28,11 @@ export class DeadlineAutomationService {
   ) {}
 
   async checkDeadlines(now = new Date()): Promise<DeadlineCheckResult> {
-    const today = dateKey(now);
+    const today = todayKey(now);
     const lastWarningDate = addDays(today, this.warningDays);
     const records = await this.obligations.find({
       where: {
-        status: In([TaxObligationStatus.PENDING, TaxObligationStatus.IN_PROGRESS, TaxObligationStatus.SUBMITTED, TaxObligationStatus.OVERDUE]),
+        status: In([...OVERDUE_ELIGIBLE_STATUSES, TaxObligationStatus.OVERDUE]),
         dueDate: LessThanOrEqual(lastWarningDate),
       },
       relations: { company: true },
@@ -45,7 +46,7 @@ export class DeadlineAutomationService {
         const current = await repository.findOne({ where: { id: obligation.id }, relations: { company: true } });
         if (!current) return;
         const daysUntilDue = daysBetween(today, current.dueDate);
-        if (daysUntilDue < 0 && current.status !== TaxObligationStatus.OVERDUE) {
+        if (shouldBecomeOverdue(current.status, current.dueDate, today)) {
           await repository.update({ id: current.id, status: current.status }, { status: TaxObligationStatus.OVERDUE });
           await this.audit.record({ actorType: 'SYSTEM', action: AuditAction.UPDATE, entity: 'TaxObligation', entityId: current.id, metadata: { changes: { status: { before: current.status, after: TaxObligationStatus.OVERDUE } } } }, manager);
           result.overdueMarked += 1;
@@ -63,14 +64,10 @@ export class DeadlineAutomationService {
   }
 }
 
-function dateKey(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-}
-
 function addDays(key: string, days: number): string {
   const [year, month, day] = key.split('-').map(Number);
   const date = new Date(year, month - 1, day + days);
-  return dateKey(date);
+  return todayKey(date);
 }
 
 function daysBetween(from: string, to: string): number {

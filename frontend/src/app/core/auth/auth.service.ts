@@ -20,14 +20,10 @@ export class AuthService {
   get isAuthenticated(): boolean { return !!this.token; }
 
   login(credentials: LoginCredentials): Observable<AuthResponse> {
-    console.log('[AUTH] login() llamado');
-    console.trace('[AUTH] origen de login()');
-
     return this.http
       .post<AuthResponse>(`${API_BASE_URL}/auth/login`, credentials)
       .pipe(
         tap((response) => {
-          console.log('[AUTH] login() respondió correctamente');
           localStorage.setItem(TOKEN_KEY, response.accessToken);
           this.userSubject.next(response.user);
         }),
@@ -35,9 +31,6 @@ export class AuthService {
   }
 
   loadCurrentUser(refresh = false): Observable<User> {
-    console.log('[AUTH] loadCurrentUser() llamado', { refresh });
-    console.trace('[AUTH] origen de loadCurrentUser()');
-
     if (this.userSubject.value && !refresh) {
       return of(this.userSubject.value);
     }
@@ -48,11 +41,9 @@ export class AuthService {
 
     return this.http.get<User>(`${API_BASE_URL}/auth/me`).pipe(
       tap((user) => {
-        console.log('[AUTH] /auth/me respondió correctamente');
         this.userSubject.next(user);
       }),
       catchError((error: unknown) => {
-        console.error('[AUTH] /auth/me falló', error);
         this.clearSession();
         return throwError(() => error);
       }),

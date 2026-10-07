@@ -8,7 +8,7 @@ import { MatCardModule } from "@angular/material/card";
 import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatInputModule } from "@angular/material/input";
 import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
-import { catchError, finalize, of, switchMap, tap } from "rxjs";
+import { catchError, finalize, of, switchMap } from "rxjs";
 import { AuthService } from "../core/auth/auth.service";
 import { apiErrorMessage } from "../core/errors/api-error-message";
 
@@ -398,42 +398,23 @@ export class LoginComponent {
   errorMessage = "";
 
   submit(): void {
-    console.log("[LOGIN] 1. submit() iniciado");
-
     this.errorMessage = "";
 
     if (this.form.invalid) {
-      console.log("[LOGIN] 2. formulario inválido");
       this.form.markAllAsTouched();
       return;
     }
-
-    console.log("[LOGIN] 2. formulario válido");
-    console.log("[LOGIN] 3. iniciando login HTTP");
 
     this.loading = true;
 
     this.auth
       .login(this.form.getRawValue())
       .pipe(
-        tap(() => {
-          console.log("[LOGIN] 4. auth.login() respondió OK");
-        }),
-
-        switchMap(() => {
-          console.log("[LOGIN] 5. iniciando loadCurrentUser()");
-          return this.auth.loadCurrentUser(true);
-        }),
-
-        tap((user) => {
-          console.log("[LOGIN] 6. loadCurrentUser() respondió OK", user);
-        }),
+        switchMap(() => this.auth.loadCurrentUser(true)),
 
         takeUntilDestroyed(this.destroyRef),
 
         catchError((error: unknown) => {
-          console.error("[LOGIN] ❌ ERROR", error);
-
           this.errorMessage =
             error instanceof HttpErrorResponse && error.status === 401
               ? "Email o contraseña incorrectos."
@@ -446,15 +427,11 @@ export class LoginComponent {
         }),
 
         finalize(() => {
-          console.log("[LOGIN] 7. finalize() → loading=false");
           this.loading = false;
         }),
       )
       .subscribe((user) => {
-        console.log("[LOGIN] 8. subscribe()", user);
-
         if (user) {
-          console.log("[LOGIN] 9. navegando a /app");
           void this.router.navigate(["/app"]);
         }
       });

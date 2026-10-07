@@ -618,13 +618,28 @@ Deadline notifications are generated at:
 - 1 day before the deadline
 - After the deadline
 
-`CANCELLED` and `APPROVED` obligations are excluded from the deadline workflow.
+Only `PENDING` and `IN_PROGRESS` obligations take part in the deadline workflow. `SUBMITTED`, `APPROVED` and `CANCELLED` obligations are excluded.
 
-Active overdue obligations can transition to:
+An obligation is considered overdue when it is `OVERDUE`, or when it is `PENDING` / `IN_PROGRESS` and its due date is before the current date (backend process timezone). The rule lives in `backend/src/tax-obligations/tax-obligation-rules.ts`, and the API exposes it as the read-only `isOverdue` field.
+
+Past-due `PENDING` / `IN_PROGRESS` obligations transition to:
 
 ```text
 OVERDUE
 ```
+
+Manual status changes are validated by the backend (`409 Conflict` when invalid):
+
+| From | Allowed to |
+|---|---|
+| `PENDING` | `IN_PROGRESS`, `SUBMITTED`, `OVERDUE`*, `CANCELLED` |
+| `IN_PROGRESS` | `PENDING`, `SUBMITTED`, `OVERDUE`*, `CANCELLED` |
+| `OVERDUE` | `PENDING`**, `IN_PROGRESS`**, `SUBMITTED`, `CANCELLED` |
+| `SUBMITTED` | `IN_PROGRESS`, `APPROVED` |
+| `APPROVED` | — (final) |
+| `CANCELLED` | — (final) |
+
+\* Only when the due date is in the past. \*\* Only when the due date is moved to today or later.
 
 The automation is idempotent.
 
