@@ -1,0 +1,52 @@
+<app-page-header eyebrow="Avisos" title="Notificaciones" subtitle="Vencimientos, documentos y cambios de estado de las obligaciones que tenés asignadas.">
+  <button mat-stroked-button type="button" (click)="markAllRead()" [disabled]="unreadCount() === 0">
+    <mat-icon>done_all</mat-icon> Marcar todas como leídas
+  </button>
+</app-page-header>
+
+<section class="tf-panel" aria-label="Notificaciones">
+  <div class="tf-toolbar list-toolbar">
+    <mat-button-toggle-group [value]="view()" (change)="setView($event.value)" aria-label="Filtrar notificaciones" hideSingleSelectionIndicator>
+      <mat-button-toggle value="all">Todas</mat-button-toggle>
+      <mat-button-toggle value="unread">Sin leer @if (unreadCount()) { <span class="count">{{ unreadCount() }}</span> }</mat-button-toggle>
+    </mat-button-toggle-group>
+    <span class="tf-toolbar-meta">@if (!loading() || items().length) { {{ total() === 1 ? '1 notificación' : total() + ' notificaciones' }} }</span>
+  </div>
+
+  @if (loading() && items().length) { <mat-progress-bar mode="indeterminate" aria-label="Cargando notificaciones" /> }
+
+  @if (error()) {
+    <app-error-state [message]="error()" (retry)="load()" />
+  } @else if (loading() && !items().length) {
+    <app-loading-rows label="Cargando notificaciones" [rows]="4" />
+  } @else if (!items().length) {
+    <app-empty-state icon="notifications_off" [title]="view() === 'unread' ? 'No tenés notificaciones sin leer' : 'Todavía no tenés notificaciones'"
+      message="Te vamos a avisar acá cuando se acerque un vencimiento, se cargue un documento o cambie el estado de una obligación asignada a vos." />
+  } @else {
+    <ul class="items">
+      @for (item of items(); track item.id) {
+        <li>
+          <button type="button" class="item" [class.unread]="!item.isRead" (click)="open(item)"
+            [attr.aria-label]="(item.isRead ? '' : 'Sin leer: ') + item.title + '. ' + item.message">
+            <span class="icon" [attr.data-type]="item.type"><mat-icon aria-hidden="true">{{ icons[item.type] }}</mat-icon></span>
+            <span class="copy">
+              <strong>{{ item.title }}</strong>
+              <span>{{ item.message }}</span>
+              <small>
+                <time [attr.datetime]="item.createdAt" [title]="item.createdAt | date: 'dd/MM/yyyy HH:mm'">{{ item.createdAt | timeAgo }}</time>
+                @if (item.taxObligation) { · {{ item.taxObligation.name }} }
+              </small>
+            </span>
+            @if (!item.isRead) { <span class="dot" aria-hidden="true"></span> }
+            @if (item.taxObligation) { <mat-icon class="chevron" aria-hidden="true">chevron_right</mat-icon> }
+          </button>
+        </li>
+      }
+    </ul>
+    @if (items().length < total()) {
+      <div class="more">
+        <button mat-stroked-button type="button" (click)="load(true)" [disabled]="loading()">Cargar más</button>
+      </div>
+    }
+  }
+</section>

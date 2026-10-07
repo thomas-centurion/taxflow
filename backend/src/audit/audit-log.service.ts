@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 import { AuthUser } from '../auth/auth-user';
@@ -62,8 +62,9 @@ export class AuditLogService {
     if (query.entityType) builder.andWhere('audit.entity = :entityType', { entityType: query.entityType });
     if (query.entityId) builder.andWhere('audit.entityId = :entityId', { entityId: query.entityId });
     if (query.actor) builder.andWhere('audit.userId = :actor', { actor: query.actor });
-    if (query.dateFrom) builder.andWhere('audit.createdAt >= :dateFrom', { dateFrom: query.dateFrom });
-    if (query.dateTo) builder.andWhere('audit.createdAt < :dateToExclusive', { dateToExclusive: nextDay(query.dateTo) });
+    if (query.dateFrom && query.dateTo && query.dateFrom > query.dateTo) throw new BadRequestException('dateFrom must be on or before dateTo.');
+    if (query.dateFrom) builder.andWhere('audit.createdAt >= :dateFrom', { dateFrom: startOfLocalDay(query.dateFrom) });
+    if (query.dateTo) builder.andWhere('audit.createdAt < :dateToExclusive', { dateToExclusive: startOfLocalDay(query.dateTo, 1) });
     const [rows, total] = await builder.orderBy('audit.createdAt', 'DESC').addOrderBy('audit.id', 'DESC')
       .skip((query.page - 1) * query.limit).take(query.limit).getManyAndCount();
     return { data: rows.map(toView), meta: paginationMeta(query.page, query.limit, total) };
@@ -87,9 +88,10 @@ function sanitize(value: unknown, key = ''): unknown {
   return undefined;
 }
 
-function nextDay(value: string): string {
+/** Midnight of a YYYY-MM-DD calendar day (plus `offsetDays`) in the backend process timezone, the same reference used for due dates. */
+export function startOfLocalDay(value: string, offsetDays = 0): Date {
   const [year, month, day] = value.split('-').map(Number);
-  return new Date(Date.UTC(year, month - 1, day + 1)).toISOString();
+  return new Date(year, month - 1, day + offsetDays);
 }
 
 function toView(row: AuditLog): AuditLogView {

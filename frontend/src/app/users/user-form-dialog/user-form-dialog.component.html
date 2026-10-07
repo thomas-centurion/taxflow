@@ -1,0 +1,64 @@
+<h2 mat-dialog-title>{{ isEdit ? 'Editar usuario' : 'Nuevo usuario' }}</h2>
+
+<form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <mat-dialog-content>
+    @if (error()) {
+      <div class="tf-form-error" role="alert"><mat-icon aria-hidden="true">error</mat-icon><span>{{ error() }}</span></div>
+    }
+
+    <div class="tf-form-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>Nombre</mat-label>
+        <input matInput formControlName="firstName" maxlength="80" autocomplete="off" cdkFocusInitial>
+        <mat-error>Ingresá el nombre.</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Apellido</mat-label>
+        <input matInput formControlName="lastName" maxlength="80" autocomplete="off">
+        <mat-error>Ingresá el apellido.</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="tf-span-2">
+        <mat-label>Email</mat-label>
+        <input matInput type="email" formControlName="email" maxlength="254" autocomplete="off">
+        <mat-hint>Se usa para iniciar sesión.</mat-hint>
+        <mat-error>Ingresá un email válido.</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="tf-span-2">
+        <mat-label>{{ isEdit ? 'Nueva contraseña (opcional)' : 'Contraseña inicial' }}</mat-label>
+        <input matInput [type]="showPassword() ? 'text' : 'password'" formControlName="password" autocomplete="new-password">
+        <button mat-icon-button matSuffix type="button" (click)="showPassword.set(!showPassword())"
+          [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'" [attr.aria-pressed]="showPassword()">
+          <mat-icon>{{ showPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+        <mat-hint>{{ isEdit ? 'Dejala vacía para mantener la actual.' : 'Entre 8 y 72 caracteres.' }}</mat-hint>
+        @if (form.controls.password.hasError('required')) { <mat-error>Definí una contraseña inicial.</mat-error> }
+        @else { <mat-error>Usá entre 8 y 72 caracteres.</mat-error> }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="tf-span-2">
+        <mat-label>Rol</mat-label>
+        <mat-select formControlName="role">
+          @for (option of roleOptions; track option.value) { <mat-option [value]="option.value">{{ option.label }}</mat-option> }
+        </mat-select>
+        <mat-hint>{{ roleHint() }}</mat-hint>
+      </mat-form-field>
+
+      <div class="tf-span-2 tf-toggle-row">
+        <mat-slide-toggle formControlName="isActive">Usuario activo</mat-slide-toggle>
+        <span class="tf-muted">
+          {{ data.isSelf ? 'Estás editando tu propia cuenta: si te desactivás o cambiás tu rol, perdés ese acceso.' : 'Los usuarios inactivos no pueden iniciar sesión.' }}
+        </span>
+      </div>
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close [disabled]="saving()">Cancelar</button>
+    <button mat-flat-button type="submit" [disabled]="saving()">
+      @if (saving()) { <mat-spinner diameter="18" aria-label="Guardando" /> } @else { {{ isEdit ? 'Guardar cambios' : 'Crear usuario' }} }
+    </button>
+  </mat-dialog-actions>
+</form>

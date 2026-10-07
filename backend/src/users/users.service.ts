@@ -6,6 +6,7 @@ import { EntityManager } from 'typeorm';
 import { rethrowDatabaseError } from '../common/database-errors';
 import { PaginatedResult, PaginationQueryDto, paginationMeta } from '../common/pagination-query.dto';
 import { User } from './user.entity';
+import { UserRole } from './user-role.enum';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AuditLogService } from '../audit/audit-log.service';
@@ -14,6 +15,8 @@ import { AuthUser } from '../auth/auth-user';
 import { diffFields, pickFields } from '../audit/audit-changes';
 
 const USER_FIELDS = ['firstName', 'lastName', 'email', 'role', 'isActive'] as const;
+
+export interface UserOption { id: string; firstName: string; lastName: string; email: string }
 
 @Injectable()
 export class UsersService {
@@ -24,6 +27,12 @@ export class UsersService {
     if (query.search) builder.andWhere('(user.firstName ILIKE :search OR user.lastName ILIKE :search OR user.email ILIKE :search)', { search: `%${query.search}%` });
     const [data, total] = await builder.orderBy('user.createdAt', 'DESC').skip((query.page - 1) * query.limit).take(query.limit).getManyAndCount();
     return { data, meta: paginationMeta(query.page, query.limit, total) };
+  }
+
+  /** Minimal directory of active users for responsible pickers/filters; exposes no role or account state. */
+  async findOptions(): Promise<UserOption[]> {
+    const users = await this.users.find({ where: { isActive: true }, order: { firstName: 'ASC', lastName: 'ASC' } });
+    return users.map(({ id, firstName, lastName, email }) => ({ id, firstName, lastName, email }));
   }
 
   async findOne(id: string): Promise<User> {
@@ -56,6 +65,7 @@ export class UsersService {
       const changes = diffFields(existing, normalizedInput, USER_FIELDS);
       const passwordChanged = input.password !== undefined && !(await bcrypt.compare(input.password, existing.passwordHash));
       if (!Object.keys(changes).length && !passwordChanged) return (await repository.findOneBy({ id }))!;
+      await this.assertActiveAdminRemains(manager, existing, { role: normalizedInput.role ?? existing.role, isActive: normalizedInput.isActive ?? existing.isActive });
       await repository.save({ ...existing, ...normalizedInput, ...(passwordChanged ? { passwordHash } : {}) });
       await this.audit.record({ actor, action: AuditAction.UPDATE, entity: 'User', entityId: id, metadata: { changes, ...(passwordChanged ? { passwordChanged: true } : {}) } }, manager);
       return (await repository.findOneBy({ id }))!;
@@ -69,10 +79,26 @@ export class UsersService {
       const repository = manager.getRepository(User);
       const existing = await repository.findOneBy({ id });
       if (!existing) throw new NotFoundException('User not found.');
+      await this.assertActiveAdminRemains(manager, existing, null);
       const values = pickFields(existing, USER_FIELDS);
       await repository.remove(existing);
       await this.audit.record({ actor, action: AuditAction.DELETE, entity: 'User', entityId: id, metadata: { values } }, manager);
     }); }
     catch (error) { return rethrowDatabaseError(error, 'User cannot be deleted because it has associated records.'); }
+  }
+
+  /**
+   * Rejects a change (role/isActive update, or deletion when `next` is null) that would leave no active ADMIN.
+   * Active ADMIN rows are locked so concurrent demotions/deactivations are serialized.
+   */
+  private async assertActiveAdminRemains(manager: EntityManager, target: User, next: { role: UserRole; isActive: boolean } | null): Promise<void> {
+    const wasActiveAdmin = target.role === UserRole.ADMIN && target.isActive;
+    const staysActiveAdmin = next !== null && next.role === UserRole.ADMIN && next.isActive;
+    if (!wasActiveAdmin || staysActiveAdmin) return;
+    const activeAdmins = await manager.getRepository(User).createQueryBuilder('user')
+      .setLock('pessimistic_write')
+      .where('user.role = :role AND user.isActive = :isActive', { role: UserRole.ADMIN, isActive: true })
+      .getMany();
+    if (!activeAdmins.some((admin) => admin.id !== target.id)) throw new ConflictException('The system must keep at least one active ADMIN.');
   }
 }

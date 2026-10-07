@@ -1,10 +1,11 @@
-import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { AfterLoad, Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { Company } from '../companies/company.entity';
 import { Country } from '../countries/country.entity';
 import { Document } from '../documents/document.entity';
 import { User } from '../users/user.entity';
 import { TaxObligationStatus } from './tax-obligation-status.enum';
 import { TaxObligationType } from './tax-obligation-type.enum';
+import { isOverdue, todayKey } from './tax-obligation-rules';
 
 @Entity({ name: 'tax_obligations' })
 @Index('UQ_tax_obligations_seed_key', ['companyId', 'name', 'type', 'dueDate'], { unique: true })
@@ -29,4 +30,8 @@ export class TaxObligation {
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' }) createdAt!: Date;
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' }) updatedAt!: Date;
   @OneToMany(() => Document, (document) => document.taxObligation) documents!: Document[];
+
+  /** Derived, not persisted: computed with the shared overdue rule every time the entity is loaded. */
+  isOverdue?: boolean;
+  @AfterLoad() computeOverdue(): void { this.isOverdue = isOverdue(this.status, this.dueDate, todayKey()); }
 }

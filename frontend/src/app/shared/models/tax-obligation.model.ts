@@ -15,6 +15,8 @@ export interface TaxObligation {
   description: string | null;
   type: TaxObligationType;
   status: TaxObligationStatus;
+  /** Computed by the backend with the shared overdue rule. */
+  isOverdue: boolean;
   dueDate: string;
   responsibleUserId: string | null;
   responsibleUser: User | null;
