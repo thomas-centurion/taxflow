@@ -40,7 +40,7 @@ const ALLOWED_FILE_TYPES: Record<string, string> = {
       <mat-card class="info-card"><mat-card-header><mat-card-title>Información general</mat-card-title></mat-card-header><mat-card-content>
         <dl class="info-grid"><div><dt>Empresa</dt><dd>{{ item.company.name }}</dd></div><div><dt>País</dt><dd>{{ item.country.name }}</dd></div>
           <div><dt>Tipo</dt><dd>{{ typeLabel(item.type) }}</dd></div><div><dt>Estado</dt><dd><span class="status" [attr.data-status]="item.status">{{ statusLabel(item.status) }}</span></dd></div>
-          <div><dt>Vencimiento</dt><dd>{{ item.dueDate | date:'dd/MM/yyyy':'UTC' }}</dd></div><div><dt>Responsable</dt><dd>{{ item.responsibleUser ? item.responsibleUser.firstName + ' ' + item.responsibleUser.lastName : 'Sin asignar' }}</dd></div>
+          <div><dt>Vencimiento</dt><dd>{{ item.dueDate | date:'dd/MM/yyyy' }}</dd></div><div><dt>Responsable</dt><dd>{{ item.responsibleUser ? item.responsibleUser.firstName + ' ' + item.responsibleUser.lastName : 'Sin asignar' }}</dd></div>
           <div class="description"><dt>Descripción</dt><dd>{{ item.description || 'Sin descripción' }}</dd></div>
         </dl>
       </mat-card-content></mat-card>
