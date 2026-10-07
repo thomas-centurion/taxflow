@@ -11,12 +11,28 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 import { JwtStrategy } from './jwt.strategy';
 import { RolesGuard } from './roles.guard';
 import { AuditModule } from '../audit/audit.module';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { LoginThrottlerGuard } from './login-throttler.guard';
+
+function positiveInteger(config: ConfigService, key: string, fallback: number): number {
+  const value = Number(config.get<string>(key, String(fallback)));
+  if (!Number.isInteger(value) || value < 1) throw new Error(`${key} must be a positive integer.`);
+  return value;
+}
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([User]),
     AuditModule,
     PassportModule,
+    // Only applied to POST /auth/login through LoginThrottlerGuard; there is no global throttling.
+    ThrottlerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        throttlers: [{ ttl: positiveInteger(config, 'LOGIN_THROTTLE_TTL_SECONDS', 60) * 1000, limit: positiveInteger(config, 'LOGIN_THROTTLE_LIMIT', 5) }],
+        errorMessage: 'Too many login attempts. Please try again later.',
+      }),
+    }),
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
@@ -27,7 +43,7 @@ import { AuditModule } from '../audit/audit.module';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, JwtAuthGuard, RolesGuard,
+  providers: [AuthService, JwtStrategy, JwtAuthGuard, RolesGuard, LoginThrottlerGuard,
     { provide: APP_GUARD, useExisting: JwtAuthGuard },
     { provide: APP_GUARD, useExisting: RolesGuard },
   ],
