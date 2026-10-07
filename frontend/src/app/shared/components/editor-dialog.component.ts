@@ -79,6 +79,16 @@ export class EditorDialogComponent {
   });
 
   constructor() {
+    // The form is shared by every editor kind: disable controls not rendered for this kind so they don't block validation.
+    const controlsByKind: Record<EditorKind, readonly string[]> = {
+      user: ['firstName', 'lastName', 'email', 'password', 'role', 'isActive'],
+      company: ['name', 'taxId', 'countryId', 'email', 'phone', 'isActive'],
+      country: ['name', 'code'],
+      obligation: ['name', 'companyId', 'countryId', 'type', 'status', 'dueDate', 'responsibleUserId', 'description'],
+    };
+    for (const [name, control] of Object.entries(this.form.controls)) {
+      if (!controlsByKind[this.data.kind].includes(name)) control.disable();
+    }
     if (this.data.kind === 'user') {
       this.form.controls.email.addValidators(Validators.required);
       if (!this.data.record) this.form.controls.password.addValidators(Validators.required);
