@@ -6,8 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { AuthService } from '../../core/auth/auth.service';
-import { personName } from '../../shared/presentation/format';
+import { calendarDate, personName, todayKey } from '../../shared/presentation/format';
 import { typeLabel } from '../../shared/presentation/labels';
 import { DueDateComponent } from '../../shared/ui/due-date.component';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
@@ -27,7 +26,7 @@ interface DashboardState { loading: boolean; error: boolean; metrics?: Dashboard
 })
 export class HomePageComponent {
   private readonly dataService = inject(DashboardDataService);
-  readonly firstName = inject(AuthService).currentUser?.firstName ?? '';
+  readonly today = calendarDate(todayKey());
   readonly personName = personName;
   readonly typeLabel = typeLabel;
 

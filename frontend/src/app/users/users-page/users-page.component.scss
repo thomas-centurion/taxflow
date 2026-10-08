@@ -1,27 +1,27 @@
 .users-table { min-width: 640px; }
 
-.person { display: flex; align-items: center; gap: 12px; }
+.person { display: flex; align-items: center; gap: 10px; }
 
 .avatar {
   display: grid;
   place-items: center;
   flex: none;
-  width: 34px;
-  height: 34px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  background: var(--tf-primary-soft);
-  color: var(--tf-primary);
-  font-size: 12px;
-  font-weight: 700;
+  background: var(--tf-neutral-soft);
+  color: var(--tf-ink-700);
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .you {
   margin-left: 6px;
-  padding: 1px 7px;
-  border-radius: 999px;
-  background: var(--tf-line-soft);
+  padding: 0 5px;
+  border: 1px solid var(--tf-line);
+  border-radius: var(--tf-radius-sm);
   color: var(--tf-ink-600);
   font-size: 11px;
-  font-weight: 600;
-  vertical-align: middle;
+  font-weight: 500;
+  vertical-align: 1px;
 }

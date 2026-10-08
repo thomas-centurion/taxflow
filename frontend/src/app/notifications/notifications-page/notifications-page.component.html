@@ -1,11 +1,11 @@
-<app-page-header eyebrow="Avisos" title="Notificaciones" subtitle="Vencimientos, documentos y cambios de estado de las obligaciones que tenés asignadas.">
+<app-page-header title="Notificaciones" subtitle="Vencimientos, documentos y cambios de estado de tus obligaciones asignadas.">
   <button mat-stroked-button type="button" (click)="markAllRead()" [disabled]="unreadCount() === 0">
     <mat-icon>done_all</mat-icon> Marcar todas como leídas
   </button>
 </app-page-header>
 
 <section class="tf-panel" aria-label="Notificaciones">
-  <div class="tf-toolbar list-toolbar">
+  <div class="tf-toolbar">
     <mat-button-toggle-group [value]="view()" (change)="setView($event.value)" aria-label="Filtrar notificaciones" hideSingleSelectionIndicator>
       <mat-button-toggle value="all">Todas</mat-button-toggle>
       <mat-button-toggle value="unread">Sin leer @if (unreadCount()) { <span class="count">{{ unreadCount() }}</span> }</mat-button-toggle>
