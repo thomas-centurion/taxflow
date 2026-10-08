@@ -2,11 +2,11 @@
   <div class="tf-panel-header">
     <div>
       <h2 id="automation-title">Procesamiento automático</h2>
-      <p>Controla el vencimiento, marca la obligación como vencida cuando corresponde y envía las alertas al responsable. Se ejecuta todos los días a las 8:00.</p>
+      <p>Controla el vencimiento, marca la obligación como vencida y alerta al responsable. Corre todos los días a las 8:00.</p>
     </div>
     @if (canManage()) {
       <div class="tf-panel-header-actions">
-        <button mat-flat-button type="button" (click)="run()" [disabled]="!canRun()" [matTooltip]="blockReason()" [matTooltipDisabled]="!blockReason()">
+        <button mat-stroked-button type="button" (click)="run()" [disabled]="!canRun()" [matTooltip]="blockReason()" [matTooltipDisabled]="!blockReason()">
           <mat-icon>autorenew</mat-icon> Procesar ahora
         </button>
       </div>
