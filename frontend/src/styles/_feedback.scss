@@ -1,27 +1,17 @@
-// Badges (status pills) and inline notices.
+// Status badges and inline notices.
 
+// Compact status label: tinted background, no pill shape and no decorative dot.
 .tf-badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 3px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: var(--tf-radius-sm);
+  font-size: var(--tf-text-xs);
+  font-weight: 500;
   line-height: 18px;
   white-space: nowrap;
   background: var(--tf-neutral-soft);
   color: var(--tf-neutral);
-
-  &::before {
-    content: '';
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: currentColor;
-  }
-
-  &.tf-badge-plain::before { display: none; }
 
   &[data-tone='success'] { background: var(--tf-success-soft); color: var(--tf-success); }
   &[data-tone='warning'] { background: var(--tf-warning-soft); color: var(--tf-warning); }
@@ -31,19 +21,24 @@
   &[data-tone='neutral'] { background: var(--tf-neutral-soft); color: var(--tf-neutral); }
 }
 
+// Outlined variant for secondary attributes (roles, audit actions): the tone only colors the text.
+.tf-badge.tf-badge-plain { padding: 0 5px; background: transparent; border: 1px solid var(--tf-line); }
+.tf-badge.tf-badge-plain:not([data-tone]) { color: var(--tf-ink-700); }
+
 .tf-notice {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
+  gap: 10px;
+  padding: 8px 12px;
   border-radius: var(--tf-radius);
   border: 1px solid var(--tf-line);
-  background: var(--tf-surface);
-  font-size: 13px;
+  background: var(--tf-surface-muted);
+  color: var(--tf-ink-700);
+  font-size: var(--tf-text-sm);
 
-  > mat-icon { flex: none; }
+  > mat-icon { flex: none; font-size: 18px; width: 18px; height: 18px; }
   .tf-notice-actions { margin-left: auto; display: flex; gap: 8px; }
 
-  &[data-tone='danger'] { border-color: var(--tf-danger-line); background: #fffafa; color: #7a1d16; > mat-icon { color: var(--tf-danger); } }
-  &[data-tone='info'] { border-color: #cfe0f7; background: #f6f9fe; color: var(--tf-ink-700); > mat-icon { color: var(--tf-info); } }
+  &[data-tone='danger'] { border-color: var(--tf-danger-line); background: var(--tf-danger-soft); color: #6e1a14; > mat-icon { color: var(--tf-danger); } }
+  &[data-tone='info'] { border-color: #cddcea; background: var(--tf-info-soft); > mat-icon { color: var(--tf-info); } }
 }

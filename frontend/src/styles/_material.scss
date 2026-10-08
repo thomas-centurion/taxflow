@@ -1,67 +1,136 @@
 @use '@angular/material' as mat;
 
-// Angular Material 3 theme: azure primary, Inter typography, compact form fields for data-dense screens.
+// Angular Material 3 theme aligned with the TaxFlow tokens: petrol accent, IBM Plex Sans,
+// small radii, flat surfaces and compact controls for data-dense screens.
 html {
   color-scheme: light;
   @include mat.theme((
     color: (primary: mat.$azure-palette, tertiary: mat.$blue-palette, theme-type: light),
-    typography: (plain-family: 'Inter, "Segoe UI", system-ui, sans-serif', brand-family: 'Inter, "Segoe UI", system-ui, sans-serif'),
+    typography: (plain-family: '"IBM Plex Sans", "Segoe UI", system-ui, sans-serif', brand-family: '"IBM Plex Sans", "Segoe UI", system-ui, sans-serif'),
     density: 0,
+  ));
+  @include mat.theme-overrides((
+    primary: #1f5b85,
+    on-primary: #ffffff,
+    primary-container: #e9f0f6,
+    on-primary-container: #174868,
+    surface: #ffffff,
+    surface-container: #ffffff,
+    surface-container-low: #ffffff,
+    surface-container-high: #ffffff,
+    surface-container-highest: #f4f5f6,
+    on-surface: #262b31,
+    on-surface-variant: #535a63,
+    outline: #c2c7cd,
+    outline-variant: #dfe2e6,
+    error: #b0261c,
+    body-large-size: 14px,
+    body-large-line-height: 20px,
+    body-medium-size: 13px,
+    body-medium-line-height: 18px,
+    body-small-size: 12px,
+    label-large-size: 13px,
+    title-medium-size: 14px,
+    corner-extra-small: 4px,
+    corner-small: 4px,
+    corner-medium: 6px,
+    corner-large: 8px,
+    corner-extra-large: 8px,
+    corner-full: 6px,
   ));
   @include mat.form-field-density(-3);
   @include mat.select-density(-3);
-  @include mat.paginator-density(-2);
+  @include mat.paginator-density(-3);
+  @include mat.button-density(-1);
+  @include mat.icon-button-density(-2);
+  @include mat.button-toggle-density(-2);
 
-  @include mat.card-overrides((
-    elevated-container-elevation: none,
-    outlined-container-shape: 12px,
-    outlined-outline-color: var(--tf-line),
-  ));
   @include mat.table-overrides((
-    background-color: var(--tf-surface),
+    background-color: transparent,
     header-headline-color: var(--tf-ink-500),
     header-headline-size: 12px,
-    header-headline-weight: 600,
-    row-item-label-text-color: var(--tf-ink-700),
+    header-headline-weight: 500,
+    row-item-label-text-color: var(--tf-ink-800),
     row-item-label-text-size: 13px,
     row-item-outline-color: var(--tf-line-soft),
-    header-container-height: 44px,
-    row-item-container-height: 56px,
+    header-container-height: 36px,
+    row-item-container-height: 48px,
   ));
   @include mat.dialog-overrides((
-    container-shape: 14px,
-    headline-padding: 22px 24px 6px,
-    content-padding: 8px 24px 4px,
-    with-actions-content-padding: 8px 24px 4px,
-    actions-padding: 12px 24px 20px,
+    container-shape: 8px,
+    container-elevation-shadow: var(--tf-shadow-overlay),
+    headline-padding: 16px 20px,
+    subhead-size: 16px,
+    subhead-weight: 600,
+    subhead-color: var(--tf-ink-900),
+    supporting-text-size: 14px,
+    supporting-text-color: var(--tf-ink-700),
+    content-padding: 16px 20px,
+    with-actions-content-padding: 16px 20px,
+    actions-padding: 12px 20px,
   ));
-  @include mat.paginator-overrides((container-background-color: transparent));
+  @include mat.menu-overrides((
+    container-shape: 6px,
+    container-elevation-shadow: var(--tf-shadow-overlay),
+    item-label-text-size: 13px,
+  ));
+  @include mat.select-overrides((
+    panel-background-color: #fff,
+    container-elevation-shadow: var(--tf-shadow-overlay),
+  ));
+  @include mat.paginator-overrides((
+    container-background-color: transparent,
+    container-text-size: 12px,
+    container-text-color: var(--tf-ink-600),
+  ));
   @include mat.snack-bar-overrides((
+    container-shape: 6px,
     container-color: var(--tf-ink-900),
     supporting-text-color: #fff,
-    button-color: #9cc3ff,
+    supporting-text-size: 13px,
+    button-color: #b9d3e8,
   ));
   @include mat.button-overrides((
-    filled-container-shape: 8px,
-    outlined-container-shape: 8px,
-    text-container-shape: 8px,
-    filled-label-text-weight: 600,
-    outlined-label-text-weight: 600,
+    filled-container-shape: 6px,
+    outlined-container-shape: 6px,
+    text-container-shape: 6px,
+    filled-label-text-weight: 500,
+    outlined-label-text-weight: 500,
+    text-label-text-weight: 500,
     outlined-outline-color: var(--tf-line),
+    outlined-label-text-color: var(--tf-ink-800),
+    filled-horizontal-padding: 14px,
+    outlined-horizontal-padding: 12px,
   ));
-  @include mat.tooltip-overrides((supporting-text-size: 12px));
+  @include mat.button-toggle-overrides((
+    shape: 6px,
+    divider-color: var(--tf-line),
+    selected-state-background-color: var(--tf-selected),
+    selected-state-text-color: var(--tf-ink-900),
+    label-text-size: 13px,
+  ));
+  @include mat.tooltip-overrides((supporting-text-size: 12px, container-shape: 4px));
+  @include mat.progress-bar-overrides((active-indicator-height: 2px, track-height: 2px));
 }
 
 .mat-mdc-form-field-subscript-wrapper { font-size: 12px; }
 .mat-mdc-icon-button .mat-icon { font-size: 20px; width: 20px; height: 20px; }
+.mat-mdc-button .mat-icon, .mat-mdc-unelevated-button .mat-icon, .mat-mdc-outlined-button .mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+// Dialog title and actions are separated from the content by hairlines, like the rest of the app.
+.mat-mdc-dialog-container .mat-mdc-dialog-title { border-bottom: 1px solid var(--tf-line-soft); }
+.mat-mdc-dialog-container .mat-mdc-dialog-actions { border-top: 1px solid var(--tf-line-soft); gap: 8px; }
+.mat-mdc-dialog-container .mat-mdc-dialog-title::before { display: none; }
 
 // Snack bar variants used by FeedbackService.
-.tf-snack-success { --mat-snack-bar-button-color: #8fe3b6; }
-.tf-snack-error { --mat-snack-bar-container-color: #5c1611; --mat-snack-bar-button-color: #ffc2bc; }
+.tf-snack-success { --mat-snack-bar-button-color: #a9dcc0; }
+.tf-snack-error { --mat-snack-bar-container-color: #5e1712; --mat-snack-bar-button-color: #f3c0bb; }
 
 // Destructive actions keep Material's semantics but use the product danger color.
 .mat-mdc-unelevated-button.tf-danger:not(:disabled) { background: var(--tf-danger); color: #fff; }
-.mat-mdc-icon-button.tf-danger-icon:not(:disabled) { color: var(--tf-danger); }
+// Row-level delete buttons stay neutral and only reveal the danger color when targeted.
+.mat-mdc-icon-button.tf-danger-icon:not(:disabled) { color: var(--tf-ink-500); }
+.mat-mdc-icon-button.tf-danger-icon:not(:disabled):is(:hover, :focus-visible) { color: var(--tf-danger); }
 
 // Notifications dropdown in the top bar needs room for two-line messages.
 .mat-mdc-menu-panel.tf-notification-menu { width: 380px; max-width: calc(100vw - 24px); }

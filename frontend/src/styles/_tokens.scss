@@ -1,49 +1,56 @@
 // Design tokens shared by every screen. Components consume these custom properties
 // instead of hard-coded colors so the product keeps a single, consistent palette.
 :root {
-  --tf-font: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
-  --tf-font-mono: 'JetBrains Mono', Consolas, 'SFMono-Regular', monospace;
+  --tf-font: 'IBM Plex Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --tf-font-mono: 'IBM Plex Mono', Consolas, 'SFMono-Regular', monospace;
 
-  // Brand / interactive
-  --tf-primary: var(--mat-sys-primary, #005cbb);
-  --tf-primary-strong: #00468f;
-  --tf-primary-soft: #eaf1fb;
+  // Type scale: page title, section title, body, table/secondary text, metadata.
+  --tf-text-title: 20px;
+  --tf-text-section: 14px;
+  --tf-text-body: 14px;
+  --tf-text-sm: 13px;
+  --tf-text-xs: 12px;
 
-  // Neutrals (ink scale)
-  --tf-ink-900: #0f1b2d;
-  --tf-ink-800: #1c2a3d;
-  --tf-ink-700: #33445a;
-  --tf-ink-600: #4b5b70;
-  --tf-ink-500: #657488;
-  --tf-ink-400: #8794a6;
-  --tf-ink-300: #b8c2cf;
-  --tf-line: #e3e8ef;
-  --tf-line-soft: #eef1f5;
-  --tf-bg: #f5f7fa;
+  // Accent: used for primary actions, links, selection and focus only.
+  --tf-primary: #1f5b85;
+  --tf-primary-soft: #e9f0f6;
+
+  // Neutrals
+  --tf-ink-900: #16191d;
+  --tf-ink-800: #262b31;
+  --tf-ink-700: #3b4149;
+  --tf-ink-600: #535a63;
+  --tf-ink-500: #6b727b;
+  --tf-ink-400: #8d939b;
+  --tf-ink-300: #c2c7cd;
+  --tf-line: #dfe2e6;
+  --tf-line-soft: #eceef0;
+  --tf-bg: #ffffff;
   --tf-surface: #ffffff;
-  --tf-surface-muted: #f9fafc;
-  --tf-sidebar: #0f1b2d;
+  --tf-surface-muted: #f7f8f9;
+  --tf-sidebar: #f4f5f6;
+  --tf-hover: #f3f4f6;
+  --tf-selected: #e6ecf1;
 
-  // Semantic
-  --tf-success: #1b7a4b;
-  --tf-success-soft: #e6f4ec;
-  --tf-warning: #8f5d07;
-  --tf-warning-soft: #fdf2d8;
-  --tf-danger: #b42318;
-  --tf-danger-soft: #fdecea;
-  --tf-danger-line: #f4cfcb;
-  --tf-info: #1d5fb8;
-  --tf-info-soft: #e8f1fc;
-  --tf-violet: #6440b4;
-  --tf-violet-soft: #f1ecfb;
-  --tf-neutral: #556477;
-  --tf-neutral-soft: #eef1f5;
+  // Semantic: tinted backgrounds stay light so status color never dominates a screen.
+  --tf-success: #1d6b45;
+  --tf-success-soft: #e8f3ed;
+  --tf-warning: #87590b;
+  --tf-warning-soft: #fbf1dc;
+  --tf-danger: #b0261c;
+  --tf-danger-soft: #fbeceb;
+  --tf-danger-line: #efc9c5;
+  --tf-info: #245d93;
+  --tf-info-soft: #e9f1f8;
+  --tf-violet: #5a4c8c;
+  --tf-violet-soft: #efedf6;
+  --tf-neutral: #555c65;
+  --tf-neutral-soft: #eef0f2;
 
-  // Shape & depth
-  --tf-radius-sm: 6px;
-  --tf-radius: 10px;
-  --tf-radius-lg: 14px;
-  --tf-shadow-sm: 0 1px 2px rgba(15, 27, 45, .06);
-  --tf-shadow: 0 1px 3px rgba(15, 27, 45, .08), 0 4px 12px rgba(15, 27, 45, .04);
-  --tf-focus-ring: 0 0 0 3px rgba(0, 92, 187, .28);
+  // Shape & depth: small radii, borders instead of shadows. Shadows are reserved for overlays.
+  --tf-radius-sm: 4px;
+  --tf-radius: 6px;
+  --tf-radius-lg: 8px;
+  --tf-shadow-overlay: 0 4px 16px rgba(22, 25, 29, .12);
+  --tf-focus-ring: 0 0 0 2px #fff, 0 0 0 4px rgba(31, 91, 133, .55);
 }
