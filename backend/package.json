@@ -12,7 +12,8 @@
         "db:seed": "ts-node src/database/seed.ts",
         "db:setup": "npm run migration:run && npm run db:seed",
         "test": "npm run build && node --test test/*.test.cjs",
-        "test:e2e": "npm run build && node test/run-e2e.cjs"
+        "test:e2e": "npm run build && node test/run-e2e.cjs",
+        "test:ci": "npm run build && node --test test/*.test.cjs && node test/run-e2e.cjs"
     },
     "dependencies": {
         "@nestjs/common": "^11.0.0",
