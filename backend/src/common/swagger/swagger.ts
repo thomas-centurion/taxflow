@@ -24,7 +24,7 @@ export function setupSwagger(app: INestApplication): void {
       '',
       '**Lists** are paginated with `page` (default 1) and `limit` (default 20, max 100) and return `{ data, meta }`.',
     ].join('\n'))
-    .setVersion('0.1.0')
+    .setVersion('1.0.0')
     .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT', description: 'Access token returned by POST /api/auth/login.' })
     .build();
   const document = SwaggerModule.createDocument(app, config);
