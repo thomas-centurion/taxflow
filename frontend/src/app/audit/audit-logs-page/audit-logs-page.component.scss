@@ -3,6 +3,6 @@
 .audit-table { min-width: 960px; }
 .nowrap { white-space: nowrap; font-variant-numeric: tabular-nums; }
 .summary { max-width: 360px; color: var(--tf-ink-600); }
-.system { color: var(--tf-violet); font-weight: 600; }
+.system { color: var(--tf-ink-600); font-style: italic; }
 .clickable { cursor: pointer; }
 .range-error { color: var(--tf-danger); }

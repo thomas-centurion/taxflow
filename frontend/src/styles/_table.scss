@@ -1,6 +1,8 @@
-// Data tables (mat-table and plain <table>) share one visual language.
+// Data tables (mat-table and plain <table>) share one visual language: hairline rows,
+// quiet headers, neutral row actions.
 
-.tf-table-scroll { overflow-x: auto; }
+// Positioned so visually hidden header labels stay inside the scroll area instead of widening the page.
+.tf-table-scroll { position: relative; overflow-x: auto; }
 
 .tf-table {
   width: 100%;
@@ -9,31 +11,35 @@
   th {
     text-align: left;
     white-space: nowrap;
-    font-size: 12px;
-    font-weight: 600;
+    font-size: var(--tf-text-xs);
+    font-weight: 500;
     color: var(--tf-ink-500);
     background: var(--tf-surface-muted);
   }
 
-  td { font-size: 13px; color: var(--tf-ink-700); }
+  td { font-size: var(--tf-text-sm); color: var(--tf-ink-800); }
+  td strong { font-weight: 500; color: var(--tf-ink-900); }
 
-  // Plain HTML tables (dashboard, documents) mirror the mat-table metrics.
+  // Plain HTML tables (dashboard, documents, history) mirror the mat-table metrics.
   &:not(.mat-mdc-table) {
-    th { padding: 11px 16px; border-bottom: 1px solid var(--tf-line); }
-    td { padding: 13px 16px; border-bottom: 1px solid var(--tf-line-soft); }
+    th { padding: 8px 16px; border-bottom: 1px solid var(--tf-line); }
+    td { padding: 10px 16px; border-bottom: 1px solid var(--tf-line-soft); }
     tbody tr:last-child td { border-bottom: 0; }
   }
 
-  .mat-mdc-header-cell:first-child, .mat-mdc-cell:first-child { padding-left: 20px; }
-  .mat-mdc-header-cell:last-child, .mat-mdc-cell:last-child { padding-right: 16px; }
+  .mat-mdc-header-cell { border-bottom-color: var(--tf-line); }
+  .mat-mdc-header-cell:first-child, .mat-mdc-cell:first-child { padding-left: 16px; }
+  .mat-mdc-header-cell:last-child, .mat-mdc-cell:last-child { padding-right: 8px; }
 
-  tbody tr:hover td, .mat-mdc-row:hover .mat-mdc-cell { background: #fafbfd; }
+  tbody tr:hover td, .mat-mdc-row:hover .mat-mdc-cell { background: var(--tf-hover); }
 
   .tf-cell-actions { text-align: right; white-space: nowrap; width: 1%; }
+  .tf-cell-actions .mat-mdc-icon-button { color: var(--tf-ink-500); }
+  .tf-num { text-align: right; }
 }
 
 .tf-table-footer { border-top: 1px solid var(--tf-line-soft); }
 
 // Two-line cells (title + secondary detail), also used in lists outside tables.
-.tf-cell-primary { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.tf-cell-secondary { font-size: 12px; color: var(--tf-ink-500); }
+.tf-cell-primary { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.tf-cell-secondary { font-size: var(--tf-text-xs); color: var(--tf-ink-500); }

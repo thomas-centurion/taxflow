@@ -1,4 +1,8 @@
-<a class="back-link" routerLink="/app/tax-obligations"><mat-icon aria-hidden="true">arrow_back</mat-icon> Obligaciones fiscales</a>
+<nav class="breadcrumb" aria-label="Ubicación">
+  <a routerLink="/app/tax-obligations">Obligaciones fiscales</a>
+  <span aria-hidden="true">/</span>
+  <span aria-current="page">{{ obligation()?.name || 'Detalle' }}</span>
+</nav>
 
 @if (loading() && !obligation()) { <mat-progress-bar mode="indeterminate" aria-label="Cargando obligación" /> }
 
@@ -13,7 +17,7 @@
         <h1>{{ item.name }}</h1>
         <app-status-badge [status]="item.status" />
       </div>
-      <p class="meta">{{ item.company.name }} · {{ item.country.name }} · {{ typeLabel(item.type) }}</p>
+      <p class="meta">{{ item.company.name }} · {{ typeLabel(item.type) }}</p>
     </div>
     <div class="header-actions">
       <button mat-stroked-button type="button" (click)="reload()" [disabled]="loading()"><mat-icon>refresh</mat-icon> Actualizar</button>
@@ -28,77 +32,79 @@
     </div>
   }
 
-  <section class="tf-panel" aria-labelledby="info-title">
-    <div class="tf-panel-header"><h2 id="info-title">Información general</h2></div>
-    <div class="tf-panel-body">
-      <dl class="tf-dl">
+  <div class="detail-grid">
+    <aside class="properties" aria-labelledby="info-title">
+      <h2 id="info-title">Detalles</h2>
+      <dl>
         <div><dt>Vencimiento</dt><dd><app-due-date [value]="item.dueDate" [status]="item.status" [overdue]="item.isOverdue" /></dd></div>
         <div><dt>Responsable</dt><dd [class.tf-muted]="!item.responsibleUser">{{ personName(item.responsibleUser) }}</dd></div>
         <div><dt>Empresa</dt><dd>{{ item.company.name }}</dd></div>
         <div><dt>País</dt><dd>{{ item.country.name }} ({{ item.country.code }})</dd></div>
         <div><dt>Tipo</dt><dd>{{ typeLabel(item.type) }}</dd></div>
-        <div><dt>Última actualización</dt><dd>{{ item.updatedAt | date: 'dd/MM/yyyy HH:mm' }}</dd></div>
-        <div class="tf-dl-wide"><dt>Descripción</dt><dd [class.tf-muted]="!item.description">{{ item.description || 'Sin descripción.' }}</dd></div>
+        <div><dt>Última actualización</dt><dd class="tf-num">{{ item.updatedAt | date: 'dd/MM/yyyy HH:mm' }}</dd></div>
+        <div><dt>Descripción</dt><dd [class.tf-muted]="!item.description">{{ item.description || 'Sin descripción.' }}</dd></div>
       </dl>
-    </div>
-  </section>
+    </aside>
 
-  <app-obligation-automation-panel [obligation]="item" [canManage]="canManage" (changed)="reload()" />
+    <div class="main-column">
+      <app-obligation-automation-panel [obligation]="item" [canManage]="canManage" (changed)="reload()" />
 
-  <section class="tf-panel documents" aria-labelledby="documents-title">
-    <div class="tf-panel-header">
-      <div><h2 id="documents-title">Documentos</h2><p>Respaldo de la presentación: declaraciones, comprobantes y papeles de trabajo.</p></div>
-    </div>
+      <section class="tf-panel documents" aria-labelledby="documents-title">
+        <div class="tf-panel-header">
+          <div><h2 id="documents-title">Documentos</h2><p>Respaldo de la presentación: declaraciones, comprobantes y papeles de trabajo.</p></div>
+        </div>
 
-    @if (canManage) {
-      <div class="upload">
-        <input #fileInput class="file-input" type="file" [accept]="acceptTypes" (change)="onFileInput($event)" aria-label="Elegir archivo para subir">
-        @if (selectedFile(); as file) {
-          <div class="selected-file">
-            <mat-icon aria-hidden="true">description</mat-icon>
-            <span class="file-copy"><strong>{{ file.name }}</strong><small>{{ fileSize(file.size) }}</small></span>
-            <button mat-button type="button" (click)="clearSelection()" [disabled]="uploading()">Quitar</button>
-            <button mat-flat-button type="button" (click)="upload()" [disabled]="uploading()"><mat-icon>upload</mat-icon> {{ uploading() ? 'Subiendo…' : 'Subir documento' }}</button>
-          </div>
-          @if (uploading()) { <mat-progress-bar mode="determinate" [value]="uploadProgress()" aria-label="Progreso de carga" /> }
-        } @else {
-          <button type="button" class="dropzone" [class.dragging]="dragging()" (click)="fileInput.click()"
-            (dragover)="onDragOver($event)" (dragleave)="dragging.set(false)" (drop)="onDrop($event)">
-            <mat-icon aria-hidden="true">cloud_upload</mat-icon>
-            <span><strong>Arrastrá un archivo o hacé clic para elegirlo</strong><small>PDF, PNG, JPG, DOCX o XLSX · hasta 10 MB</small></span>
-          </button>
-        }
-      </div>
-    }
-
-    @if (documentsError()) {
-      <app-error-state [message]="documentsError()" (retry)="loadDocuments()" />
-    } @else if (documentsLoading() && !documents().length) {
-      <app-loading-rows label="Cargando documentos" [rows]="2" />
-    } @else if (!documents().length) {
-      <app-empty-state icon="folder_open" title="Sin documentos" [compact]="true"
-        [message]="canManage ? 'Subí la documentación respaldatoria de esta obligación.' : 'Todavía no se cargó documentación para esta obligación.'" />
-    } @else {
-      <div class="tf-table-scroll">
-        <table class="tf-table">
-          <thead><tr><th scope="col">Archivo</th><th scope="col">Subido por</th><th scope="col">Fecha</th><th scope="col" class="tf-cell-actions"><span class="tf-visually-hidden">Acciones</span></th></tr></thead>
-          <tbody>
-            @for (document of documents(); track document.id) {
-              <tr>
-                <td><span class="tf-cell-primary"><strong class="file-name">{{ document.originalFilename }}</strong><span class="tf-cell-secondary">{{ mimeLabel(document.mimeType) }} · {{ fileSize(document.size) }}</span></span></td>
-                <td>{{ personName(document.uploadedBy) }}</td>
-                <td>{{ document.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
-                <td class="tf-cell-actions">
-                  <button mat-icon-button type="button" matTooltip="Descargar" [attr.aria-label]="'Descargar ' + document.originalFilename" (click)="download(document)"><mat-icon>download</mat-icon></button>
-                  @if (canManage) {
-                    <button mat-icon-button type="button" class="tf-danger-icon" matTooltip="Eliminar" [attr.aria-label]="'Eliminar ' + document.originalFilename" (click)="confirmDelete(document)"><mat-icon>delete</mat-icon></button>
-                  }
-                </td>
-              </tr>
+        @if (canManage) {
+          <div class="upload">
+            <input #fileInput class="file-input" type="file" [accept]="acceptTypes" (change)="onFileInput($event)" aria-label="Elegir archivo para subir">
+            @if (selectedFile(); as file) {
+              <div class="selected-file">
+                <mat-icon aria-hidden="true">description</mat-icon>
+                <span class="file-copy"><strong>{{ file.name }}</strong><small>{{ fileSize(file.size) }}</small></span>
+                <button mat-button type="button" (click)="clearSelection()" [disabled]="uploading()">Quitar</button>
+                <button mat-flat-button type="button" (click)="upload()" [disabled]="uploading()"><mat-icon>upload</mat-icon> {{ uploading() ? 'Subiendo…' : 'Subir documento' }}</button>
+              </div>
+              @if (uploading()) { <mat-progress-bar mode="determinate" [value]="uploadProgress()" aria-label="Progreso de carga" /> }
+            } @else {
+              <button type="button" class="dropzone" [class.dragging]="dragging()" (click)="fileInput.click()"
+                (dragover)="onDragOver($event)" (dragleave)="dragging.set(false)" (drop)="onDrop($event)">
+                <mat-icon aria-hidden="true">cloud_upload</mat-icon>
+                <span><strong>Arrastrá un archivo o hacé clic para elegirlo</strong><small>PDF, PNG, JPG, DOCX o XLSX · hasta 10 MB</small></span>
+              </button>
             }
-          </tbody>
-        </table>
-      </div>
-    }
-  </section>
+          </div>
+        }
+
+        @if (documentsError()) {
+          <app-error-state [message]="documentsError()" (retry)="loadDocuments()" />
+        } @else if (documentsLoading() && !documents().length) {
+          <app-loading-rows label="Cargando documentos" [rows]="2" />
+        } @else if (!documents().length) {
+          <app-empty-state icon="folder_open" title="Sin documentos" [compact]="true"
+            [message]="canManage ? 'Subí la documentación respaldatoria de esta obligación.' : 'Todavía no se cargó documentación para esta obligación.'" />
+        } @else {
+          <div class="tf-table-scroll">
+            <table class="tf-table">
+              <thead><tr><th scope="col">Archivo</th><th scope="col">Subido por</th><th scope="col">Fecha</th><th scope="col" class="tf-cell-actions"><span class="tf-visually-hidden">Acciones</span></th></tr></thead>
+              <tbody>
+                @for (document of documents(); track document.id) {
+                  <tr>
+                    <td><span class="tf-cell-primary"><strong class="file-name">{{ document.originalFilename }}</strong><span class="tf-cell-secondary">{{ mimeLabel(document.mimeType) }} · {{ fileSize(document.size) }}</span></span></td>
+                    <td>{{ personName(document.uploadedBy) }}</td>
+                    <td>{{ document.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+                    <td class="tf-cell-actions">
+                      <button mat-icon-button type="button" matTooltip="Descargar" [attr.aria-label]="'Descargar ' + document.originalFilename" (click)="download(document)"><mat-icon>download</mat-icon></button>
+                      @if (canManage) {
+                        <button mat-icon-button type="button" class="tf-danger-icon" matTooltip="Eliminar" [attr.aria-label]="'Eliminar ' + document.originalFilename" (click)="confirmDelete(document)"><mat-icon>delete</mat-icon></button>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+    </div>
+  </div>
 }

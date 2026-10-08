@@ -1,5 +1,5 @@
 @if (state$ | async; as state) {
-  <app-page-header eyebrow="Resumen" [title]="firstName ? 'Hola, ' + firstName : 'Inicio'" subtitle="Estado actual de las obligaciones fiscales de tus empresas.">
+  <app-page-header title="Resumen" [subtitle]="'Situación de la cartera al ' + today">
     <button mat-stroked-button type="button" (click)="refresh()" [disabled]="state.loading">
       <mat-icon>refresh</mat-icon> Actualizar
     </button>
@@ -14,48 +14,44 @@
   @if (state.metrics; as m) {
     @if (m.overdue.length) {
       <button type="button" class="tf-notice alert" data-tone="danger" (click)="focusOverdue()">
-        <mat-icon aria-hidden="true">warning</mat-icon>
-        <span><strong>{{ m.overdue.length === 1 ? '1 obligación vencida' : m.overdue.length + ' obligaciones vencidas' }}</strong> requieren atención inmediata.</span>
-        <span class="tf-notice-actions alert-cta">Revisar <mat-icon aria-hidden="true">arrow_downward</mat-icon></span>
+        <mat-icon aria-hidden="true">error</mat-icon>
+        <span><strong>{{ m.overdue.length === 1 ? '1 obligación vencida' : m.overdue.length + ' obligaciones vencidas' }}</strong> sin presentar.</span>
+        <span class="tf-notice-actions alert-cta">Ver vencidas</span>
       </button>
     }
 
-    <section class="kpis" aria-label="Indicadores principales">
-      <button type="button" class="kpi" data-tone="danger" [class.calm]="!m.overdue.length" (click)="focusOverdue()">
-        <span class="kpi-icon"><mat-icon aria-hidden="true">error</mat-icon></span>
-        <span class="kpi-label">Vencidas</span>
-        <strong class="kpi-value">{{ m.overdue.length }}</strong>
-        <span class="kpi-hint">{{ m.overdue.length ? 'Requieren acción' : 'Todo al día' }}</span>
+    <section class="summary" aria-label="Indicadores principales">
+      <button type="button" class="metric" [class.attention]="m.overdue.length > 0" (click)="focusOverdue()">
+        <span class="metric-label">Vencidas</span>
+        <strong class="metric-value">{{ m.overdue.length }}</strong>
+        <span class="metric-hint">{{ m.overdue.length ? 'Requieren acción' : 'Ninguna pendiente' }}</span>
       </button>
-      <div class="kpi" data-tone="warning">
-        <span class="kpi-icon"><mat-icon aria-hidden="true">schedule</mat-icon></span>
-        <span class="kpi-label">Vencen en 7 días</span>
-        <strong class="kpi-value">{{ m.dueThisWeek }}</strong>
-        <span class="kpi-hint">Pendientes o en curso</span>
+      <div class="metric">
+        <span class="metric-label">Vencen en 7 días</span>
+        <strong class="metric-value">{{ m.dueThisWeek }}</strong>
+        <span class="metric-hint">Pendientes o en curso</span>
       </div>
-      <div class="kpi" data-tone="info">
-        <span class="kpi-icon"><mat-icon aria-hidden="true">pending_actions</mat-icon></span>
-        <span class="kpi-label">Por presentar</span>
-        <strong class="kpi-value">{{ m.toFile }}</strong>
-        <span class="kpi-hint">Pendientes y en curso, en fecha</span>
+      <div class="metric">
+        <span class="metric-label">Por presentar</span>
+        <strong class="metric-value">{{ m.toFile }}</strong>
+        <span class="metric-hint">Pendientes y en curso, en fecha</span>
       </div>
-      <a class="kpi" data-tone="violet" routerLink="/app/tax-obligations" [queryParams]="{ status: 'SUBMITTED' }">
-        <span class="kpi-icon"><mat-icon aria-hidden="true">outbox</mat-icon></span>
-        <span class="kpi-label">Presentadas</span>
-        <strong class="kpi-value">{{ m.submitted }}</strong>
-        <span class="kpi-hint">Esperando aprobación</span>
+      <a class="metric" routerLink="/app/tax-obligations" [queryParams]="{ status: 'SUBMITTED' }">
+        <span class="metric-label">Presentadas</span>
+        <strong class="metric-value">{{ m.submitted }}</strong>
+        <span class="metric-hint">Esperando aprobación</span>
       </a>
     </section>
 
     <div class="grid">
-      <section class="tf-panel upcoming" aria-labelledby="upcoming-title">
+      <section class="tf-panel" aria-labelledby="upcoming-title">
         <div class="tf-panel-header">
           <div><h2 id="upcoming-title">Próximos vencimientos</h2><p>Obligaciones abiertas que vencen en los próximos 30 días.</p></div>
           <div class="tf-panel-header-actions"><a mat-button routerLink="/app/tax-obligations">Ver todas</a></div>
         </div>
         @if (m.upcoming.length) {
           <div class="tf-table-scroll">
-            <table class="tf-table">
+            <table class="tf-table upcoming-table">
               <thead><tr><th scope="col">Obligación</th><th scope="col">Vencimiento</th><th scope="col">Estado</th><th scope="col">Responsable</th></tr></thead>
               <tbody>
                 @for (item of m.upcoming; track item.id) {
@@ -63,7 +59,7 @@
                     <td><span class="tf-cell-primary"><a class="tf-link" [routerLink]="['/app/tax-obligations', item.id]">{{ item.name }}</a><span class="tf-cell-secondary">{{ item.company.name }} · {{ typeLabel(item.type) }}</span></span></td>
                     <td><app-due-date [value]="item.dueDate" [status]="item.status" [overdue]="item.isOverdue" /></td>
                     <td><app-status-badge [status]="item.status" /></td>
-                    <td>{{ personName(item.responsibleUser) }}</td>
+                    <td [class.tf-muted]="!item.responsibleUser">{{ personName(item.responsibleUser) }}</td>
                   </tr>
                 }
               </tbody>
@@ -91,23 +87,23 @@
             }
           </ul>
         } @else {
-          <app-empty-state icon="task_alt" title="Todo al día" message="No hay obligaciones vencidas." [compact]="true" />
+          <app-empty-state icon="task_alt" title="Ninguna obligación vencida" message="Todas las obligaciones abiertas están en fecha." [compact]="true" />
         }
       </section>
 
       <section class="tf-panel" aria-labelledby="status-title">
         <div class="tf-panel-header">
-          <div><h2 id="status-title">Estado de la cartera</h2><p>{{ m.total }} obligaciones registradas en {{ m.totalCompanies }} empresas.</p></div>
+          <div><h2 id="status-title">Estado de la cartera</h2><p>{{ m.total }} obligaciones en {{ m.totalCompanies }} empresas.</p></div>
         </div>
         @if (m.total) {
           <ul class="distribution">
             @for (row of m.statusRows; track row.status) {
               <li>
-                <a class="distribution-label" routerLink="/app/tax-obligations" [queryParams]="{ status: row.status }">
-                  <span class="tf-badge" [attr.data-tone]="row.tone">{{ row.label }}</span>
-                  <strong>{{ row.count }}</strong>
+                <a class="distribution-row" routerLink="/app/tax-obligations" [queryParams]="{ status: row.status }">
+                  <span class="distribution-label">{{ row.label }}</span>
+                  <span class="bar" [attr.data-tone]="row.tone" role="img" [attr.aria-label]="row.label + ': ' + row.count + ' de ' + m.total"><span [style.width.%]="row.percent"></span></span>
+                  <strong class="tf-num">{{ row.count }}</strong>
                 </a>
-                <span class="bar" [attr.data-tone]="row.tone" role="img" [attr.aria-label]="row.label + ': ' + row.count + ' de ' + m.total"><span [style.width.%]="row.percent"></span></span>
               </li>
             }
           </ul>
@@ -120,19 +116,19 @@
 
       <section class="tf-panel" aria-labelledby="companies-title">
         <div class="tf-panel-header">
-          <div><h2 id="companies-title">Empresas que requieren atención</h2><p>Con obligaciones abiertas o vencidas.</p></div>
+          <div><h2 id="companies-title">Empresas con pendientes</h2><p>Con obligaciones abiertas o vencidas.</p></div>
           <div class="tf-panel-header-actions"><a mat-button routerLink="/app/companies">Ver empresas</a></div>
         </div>
         @if (m.companyRows.length) {
           <div class="tf-table-scroll">
             <table class="tf-table">
-              <thead><tr><th scope="col">Empresa</th><th scope="col" class="num">Abiertas</th><th scope="col" class="num">Vencidas</th></tr></thead>
+              <thead><tr><th scope="col">Empresa</th><th scope="col" class="tf-num">Abiertas</th><th scope="col" class="tf-num">Vencidas</th></tr></thead>
               <tbody>
                 @for (row of m.companyRows; track row.id) {
                   <tr>
                     <td><a class="tf-link" routerLink="/app/tax-obligations" [queryParams]="{ company: row.id }">{{ row.name }}</a></td>
-                    <td class="num">{{ row.open }}</td>
-                    <td class="num" [class.danger]="row.overdue > 0">{{ row.overdue }}</td>
+                    <td class="tf-num">{{ row.open }}</td>
+                    <td class="tf-num" [class.danger]="row.overdue > 0">{{ row.overdue }}</td>
                   </tr>
                 }
               </tbody>
@@ -144,8 +140,8 @@
       </section>
     </div>
   } @else if (state.loading) {
-    <section class="kpis" aria-hidden="true">
-      @for (item of [1, 2, 3, 4]; track item) { <div class="kpi skeleton"><span></span><span></span><span></span></div> }
+    <section class="summary" aria-hidden="true">
+      @for (item of [1, 2, 3, 4]; track item) { <div class="metric skeleton"><span></span><span></span><span></span></div> }
     </section>
   }
 }

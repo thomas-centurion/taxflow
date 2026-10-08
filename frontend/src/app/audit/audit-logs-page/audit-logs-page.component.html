@@ -1,4 +1,4 @@
-<app-page-header eyebrow="Trazabilidad" title="Auditoría" subtitle="Registro inalterable de quién hizo qué y cuándo. Hacé clic en un evento para ver el detalle.">
+<app-page-header title="Auditoría" subtitle="Registro de quién hizo qué y cuándo. Abrí un evento para ver los cambios.">
   <button mat-stroked-button type="button" (click)="reload()" [disabled]="loading()"><mat-icon>refresh</mat-icon> Actualizar</button>
 </app-page-header>
 
@@ -32,12 +32,14 @@
     <mat-form-field>
       <mat-label>Hasta</mat-label>
       <input matInput type="date" formControlName="dateTo">
-      @if (rangeError()) { <mat-hint class="range-error">"Hasta" no puede ser anterior a "Desde".</mat-hint> }
     </mat-form-field>
   </form>
 
   <div class="tf-filter-actions">
-    <span class="tf-filter-summary" aria-live="polite">@if (!loading()) { {{ total() === 1 ? '1 evento' : total() + ' eventos' }} }</span>
+    <span class="tf-filter-summary" aria-live="polite">
+      @if (rangeError()) { <span class="range-error" role="alert">"Hasta" no puede ser anterior a "Desde".</span> }
+      @else if (!loading()) { {{ total() === 1 ? '1 evento' : total() + ' eventos' }} }
+    </span>
     @if (activeFilters()) {
       <button mat-button type="button" (click)="clearFilters()"><mat-icon>filter_alt_off</mat-icon> Limpiar filtros ({{ activeFilters() }})</button>
     }

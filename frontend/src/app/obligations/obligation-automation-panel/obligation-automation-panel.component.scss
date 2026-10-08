@@ -1,34 +1,35 @@
 :host { display: block; }
 
+// Latest run: a quiet row whose icon and border carry the outcome.
 .current {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 14px 16px;
+  gap: 12px;
+  padding: 10px 12px;
   border: 1px solid var(--tf-line);
   border-radius: var(--tf-radius);
   background: var(--tf-surface-muted);
 
-  &[data-status='SUCCEEDED'] { border-color: #bfe3cf; background: var(--tf-success-soft); .state-icon { color: var(--tf-success); } }
-  &[data-status='FAILED'] { border-color: var(--tf-danger-line); background: #fffafa; .state-icon { color: var(--tf-danger); } }
-  &[data-status='PENDING'], &[data-status='RUNNING'] { border-color: #cfe0f7; background: var(--tf-info-soft); .state-icon { color: var(--tf-info); } }
+  &[data-status='SUCCEEDED'] .state-icon { color: var(--tf-success); }
+  &[data-status='FAILED'] { border-color: var(--tf-danger-line); background: var(--tf-danger-soft); .state-icon { color: var(--tf-danger); } }
+  &[data-status='PENDING'], &[data-status='RUNNING'] { .state-icon { color: var(--tf-info); } }
 }
 
-.state-icon { flex: none; font-size: 26px; width: 26px; height: 26px; }
+.state-icon { flex: none; font-size: 20px; width: 20px; height: 20px; }
 
 .current-copy {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
   min-width: 0;
-  strong { color: var(--tf-ink-900); }
-  span { font-size: 13px; color: var(--tf-ink-600); }
+  strong { font-size: var(--tf-text-sm); font-weight: 500; color: var(--tf-ink-900); }
+  span { font-size: var(--tf-text-xs); color: var(--tf-ink-600); }
 }
 
-.progress { margin-bottom: 12px; border-radius: 4px; }
-.empty { margin: 0; }
+.progress { margin-bottom: 12px; }
+.empty { margin: 0; font-size: var(--tf-text-sm); }
 
-h3 { margin: 20px 0 8px; font-size: 13px; font-weight: 600; color: var(--tf-ink-600); }
+h3 { margin: 16px 0 6px; font-size: var(--tf-text-xs); font-weight: 500; color: var(--tf-ink-500); }
 
 .history { border: 1px solid var(--tf-line-soft); border-radius: var(--tf-radius); }
 .nowrap { white-space: nowrap; }

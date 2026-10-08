@@ -7,23 +7,25 @@ body {
   background: var(--tf-bg);
   color: var(--tf-ink-800);
   font-family: var(--tf-font);
-  font-size: 14px;
+  font-size: var(--tf-text-body);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }
 
-h1, h2, h3, h4 { color: var(--tf-ink-900); letter-spacing: -.01em; }
+h1, h2, h3, h4 { color: var(--tf-ink-900); }
 
 a { color: var(--tf-primary); }
 
 :focus-visible { outline: none; box-shadow: var(--tf-focus-ring); border-radius: var(--tf-radius-sm); }
 
-.material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+.material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20; }
 
-.tf-mono { font-family: var(--tf-font-mono); font-size: 12px; }
+.tf-mono { font-family: var(--tf-font-mono); font-size: var(--tf-text-xs); }
 
 .tf-muted { color: var(--tf-ink-500); }
+
+.tf-num { font-variant-numeric: tabular-nums; }
 
 .tf-visually-hidden {
   position: absolute !important;
@@ -35,8 +37,8 @@ a { color: var(--tf-primary); }
 
 .tf-link {
   color: var(--tf-ink-900);
-  font-weight: 600;
+  font-weight: 500;
   text-decoration: none;
-  border-radius: 4px;
-  &:hover { color: var(--tf-primary); text-decoration: underline; }
+  border-radius: 2px;
+  &:hover { color: var(--tf-primary); text-decoration: underline; text-underline-offset: 2px; }
 }
