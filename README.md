@@ -2,15 +2,13 @@
 
 TaxFlow is a full-stack tax compliance and automation platform designed to centralize tax obligations, deadlines, documents, notifications and audit activity for organizations.
 
-The project is being developed as a portfolio project focused on enterprise-oriented software architecture, security, automation and cloud-ready development.
+It is a portfolio project focused on enterprise-oriented software architecture, security, automation and production readiness.
 
 ## Status
 
-**MVP — actively evolving**
+**v1.0.0 — feature-complete**
 
-The current version includes authentication, role-based authorization, tax obligation management, dashboards, document management, notifications, scheduled deadline automation with a tracked execution history (automation runs), audit logging, OpenAPI documentation (Swagger) and a GitHub Actions pipeline that runs the unit, frontend and E2E tests on every pull request.
-
-The architecture is designed to evolve toward Azure-based infrastructure in future phases.
+TaxFlow includes authentication, role-based authorization, tax obligation management, dashboards, document management, notifications, scheduled deadline automation with a tracked execution history (automation runs), audit logging, OpenAPI documentation (Swagger), production Docker images with health checks, and a GitHub Actions pipeline that runs the unit, frontend and E2E tests and validates the production images on every pull request.
 
 ---
 
@@ -37,7 +35,9 @@ The architecture is designed to evolve toward Azure-based infrastructure in futu
 - Unit, frontend and E2E tests
 - OpenAPI / Swagger documentation
 - Continuous integration with GitHub Actions
-- Dockerized PostgreSQL environment
+- Liveness and readiness health checks
+- Production Docker images (NestJS API and nginx web server)
+- Docker Compose for local development and a production-like stack
 
 ---
 
@@ -119,7 +119,7 @@ Document metadata is stored in PostgreSQL while binary files are handled through
 
 The current implementation uses local filesystem storage for development.
 
-The `StorageService` abstraction allows the storage provider to be replaced in the future with Azure Blob Storage without changing the business logic.
+The `StorageService` abstraction allows the storage provider to be replaced with a cloud object store (for example Azure Blob Storage or Amazon S3) without changing the business logic. In Docker, local storage lives on a named volume.
 
 ### Automation
 
@@ -138,17 +138,11 @@ See [Automation Runs (Phase 10)](#automation-runs-phase-10).
 
 ### Infrastructure
 
-The project currently uses Docker for the local PostgreSQL environment.
+- **Development:** Docker Compose runs PostgreSQL; the API and Angular run with their dev servers.
+- **Production:** two images. The API image runs the compiled NestJS app as a non-root user. The web image serves the Angular production build with nginx and proxies `/api` to the API, so the browser uses a single origin. `docker compose --profile app` runs the whole stack. See [Production](#production).
+- **CI:** GitHub Actions validates tests, builds and the production images. See [Continuous Integration](#continuous-integration).
 
-The architecture is designed to evolve toward Azure services such as:
-
-- Azure Blob Storage
-- Azure Functions
-- Azure Service Bus
-- Microsoft Entra ID
-- Azure DevOps CI/CD
-
-These cloud integrations are part of the project roadmap and are not currently implemented.
+No cloud provider is required. Possible cloud deployments are listed in [Future Improvements](#future-improvements).
 
 ---
 
@@ -183,9 +177,10 @@ These cloud integrations are part of the project roadmap and are not currently i
 
 ### Infrastructure
 
-- Docker
+- Docker (multi-stage images, Node.js 22 Alpine)
 - Docker Compose
-- PostgreSQL
+- nginx (web server and reverse proxy in production)
+- PostgreSQL 16
 
 ### Testing
 
@@ -198,13 +193,35 @@ These cloud integrations are part of the project roadmap and are not currently i
 - Swagger / OpenAPI (`@nestjs/swagger`)
 - GitHub Actions
 
-### Planned
+---
 
-- Azure Blob Storage
-- Azure Functions
-- Azure Service Bus
-- Microsoft Entra ID
-- Azure DevOps CI/CD
+## Project Structure
+
+```text
+.
+├── backend/                 NestJS API
+│   ├── src/
+│   │   ├── auth/            JWT login, guards, roles, login rate limiting
+│   │   ├── users/  companies/  countries/  tax-obligations/
+│   │   ├── documents/       uploads, validation, StorageService (local filesystem)
+│   │   ├── notifications/   per-user notifications
+│   │   ├── automation/      deadline processing, automation runs, daily scheduler
+│   │   ├── audit/           audit log recording and queries
+│   │   ├── health/          liveness and readiness endpoints
+│   │   ├── common/          pagination, database errors, Swagger, runtime options
+│   │   └── database/        TypeORM options, migrations, development seed
+│   ├── test/                unit (*.test.cjs) and E2E (*.e2e.cjs) tests, E2E runner
+│   └── Dockerfile
+├── frontend/                Angular application
+│   ├── src/app/             core (auth, HTTP, services), feature pages, shared UI
+│   ├── src/styles/          design tokens and global styles
+│   ├── nginx.conf           production web server and /api proxy
+│   └── Dockerfile
+├── scripts/                 docker-smoke-test.sh
+├── .github/workflows/       ci.yml
+├── docker-compose.yml       PostgreSQL (dev) and the production stack (profile "app")
+└── .env.example
+```
 
 ---
 
@@ -303,10 +320,11 @@ The API will then be available at:
 http://localhost:3002/api
 ```
 
-Health check:
+Health checks:
 
 ```text
-http://localhost:3002/api/health
+http://localhost:3002/api/health         liveness: the process is up
+http://localhost:3002/api/health/ready   readiness: PostgreSQL is reachable (503 otherwise)
 ```
 
 API documentation (Swagger UI):
@@ -376,7 +394,7 @@ LOGIN_THROTTLE_TTL_SECONDS=60
 
 Do not commit `.env`.
 
-Production environments must use unique secrets and secure credentials.
+Production environments must use unique secrets and secure credentials. Production-only options are described in [Production configuration](#production-configuration).
 
 ---
 
@@ -410,7 +428,7 @@ The backend publishes an OpenAPI 3 document generated from the NestJS controller
 | `http://localhost:3002/api/docs` | Swagger UI |
 | `http://localhost:3002/api/docs-json` | OpenAPI document (JSON) |
 
-It documents every endpoint (37 operations in 10 tags: Auth, Users, Countries, Companies, Tax Obligations, Documents, Notifications, Audit Logs, Automation Runs and Health) with path and query parameters, request bodies, response schemas, the roles allowed, and the main error responses (`400`, `401`, `403`, `404`, `409`, `413`, `429`). Errors keep the NestJS format `{ statusCode, message, error? }`.
+It documents every endpoint (38 operations in 10 tags: Auth, Users, Countries, Companies, Tax Obligations, Documents, Notifications, Audit Logs, Automation Runs and Health) with path and query parameters, request bodies, response schemas, the roles allowed, and the main error responses (`400`, `401`, `403`, `404`, `409`, `413`, `429`). Errors keep the NestJS format `{ statusCode, message, error? }`.
 
 **Trying protected endpoints:**
 
@@ -947,6 +965,75 @@ The seed only inserts missing records (it never changes passwords, roles, active
 
 ---
 
+# Production
+
+TaxFlow ships two production images and runs them with Docker Compose. No cloud services are required.
+
+| Image | Content |
+|---|---|
+| `backend/Dockerfile` | Compiled NestJS API with production dependencies only, `NODE_ENV=production`, non-root user, container health check on `/api/health/ready`. Applies pending migrations on startup. |
+| `frontend/Dockerfile` | Angular production build served by unprivileged nginx on port 8080. Proxies `/api` to the API, falls back to `index.html` for client-side routes, caches hashed bundles for a year and never caches `index.html`. |
+
+In production the web app calls the API on the same origin (`/api`, set through `fileReplacements` in `angular.json`), so CORS is not involved. Development keeps `http://localhost:3002/api`.
+
+## Running the production stack from scratch
+
+```bash
+cp .env.example .env    # then set a unique JWT_SECRET and a real DATABASE_PASSWORD
+docker compose --profile app up -d --build
+sh scripts/docker-smoke-test.sh
+```
+
+The app is then available at `http://localhost:8080` (`APP_PORT`). Compose starts PostgreSQL, waits for it, starts the API (which applies the migrations) once healthy, and then the web server. `docker compose --profile app down` stops everything; add `-v` to also delete the database and document volumes.
+
+`scripts/docker-smoke-test.sh` is read-only: it checks the web app, client-side routes, liveness, readiness, that protected routes require a JWT and that Swagger is disabled.
+
+The stack uses the same PostgreSQL service as local development (`docker compose up -d postgres`), so on a developer machine both share the `taxflow` database.
+
+## Demo data
+
+A production installation starts empty: the API never seeds data, and the seed refuses to run with `NODE_ENV=production`. For a **demo** installation only, the seed can be run explicitly in development mode inside the API container:
+
+```bash
+docker compose exec -e NODE_ENV=development backend node dist/database/seed.js
+```
+
+It uses `SEED_USER_PASSWORD` from `.env` for the three seed users (see [Development Credentials](#development-credentials)) and only inserts missing records. Never do this on an installation with real users.
+
+## Production configuration
+
+| Variable | Production value | Purpose |
+|---|---|---|
+| `NODE_ENV` | `production` | Disables Swagger, debug/verbose logs and the seed |
+| `JWT_SECRET` | Unique random value, at least 32 bytes (`openssl rand -hex 32`) | Signs access tokens; the API refuses to start without it |
+| `DATABASE_*` | Real credentials | `DATABASE_HOST` is `postgres` inside Compose |
+| `DATABASE_MIGRATIONS_RUN` | `true` | Applies pending migrations on startup (the image has no ts-node) |
+| `DATABASE_SSL` | `true` for managed PostgreSQL | TLS with certificate verification |
+| `TRUST_PROXY` | Number of proxies in front of the API (`1` in Compose) | Lets the login rate limit see the client IP instead of the proxy's |
+| `FRONTEND_ORIGIN` / `APP_ORIGIN` | Public URL of the web app | CORS origin for direct API clients |
+| `STORAGE_LOCAL_PATH` | `./storage` (a Docker volume) | Document storage |
+| `SWAGGER_ENABLED` | Unset | Swagger stays off in production unless set to `true` |
+
+The Compose stack sets `NODE_ENV`, `DATABASE_HOST`, `DATABASE_MIGRATIONS_RUN`, `TRUST_PROXY` and the storage path itself and takes the secrets from `.env`. Secrets never live in the images or the repository.
+
+## Health checks
+
+| Endpoint | Meaning | Used by |
+|---|---|---|
+| `GET /api/health` | Liveness: the process answers | Load balancers, E2E runner |
+| `GET /api/health/ready` | Readiness: `SELECT 1` on PostgreSQL; `503` when unreachable | Docker health check, Compose startup order, CI |
+
+Both are public and expose no internal details.
+
+## Operational notes
+
+- The API stops gracefully on `SIGTERM` (database connections are closed), which is how Docker stops containers.
+- The daily deadline job and restart recovery assume **a single API instance** (see [Automation Runs](#automation-runs-phase-10)).
+- nginx serves plain HTTP. In a real deployment, terminate TLS in front of it (a reverse proxy or the hosting platform) and set `TRUST_PROXY` to the number of proxies.
+- Back up the PostgreSQL volume and the documents volume together: document metadata lives in the database and the files on the volume.
+
+---
+
 # Testing
 
 | Command | What it runs |
@@ -991,18 +1078,19 @@ npm --prefix frontend run build
 
 # Continuous Integration
 
-GitHub Actions runs `.github/workflows/ci.yml` on every pull request, on pushes to `main` and on demand. A newer push to the same branch cancels the run in progress. Two jobs run in parallel on Node.js 22 with the npm cache:
+GitHub Actions runs `.github/workflows/ci.yml` on every pull request, on pushes to `main` and on demand. A newer push to the same branch cancels the run in progress. Three jobs run in parallel (Node.js 22 with the npm cache):
 
 | Job | Steps |
 |---|---|
 | **Backend** | `npm ci` → production dependency audit → build → unit tests → E2E tests against `taxflow_test` |
 | **Frontend** | `npm ci` → production dependency audit → unit tests → production build |
+| **Production** | Build both Docker images and start the stack with Compose (waits for health checks) → smoke test → check that the seed refuses `NODE_ENV=production` → demo seed and login through nginx |
 
 The backend job starts a PostgreSQL 16 service container just for the job; it never uses a developer database. The database password is a fixed CI-only value for that disposable container, and `JWT_SECRET` and `SEED_USER_PASSWORD` are generated randomly on every run and masked in the logs. No repository secrets are needed.
 
 The dependency audit fails the job on high or critical vulnerabilities in **production** dependencies. Development-only tooling advisories are reported by `npm audit` but do not fail CI (see [Known limitations](#known-limitations)).
 
-A pull request is ready to merge when both jobs pass: every unit, frontend and E2E test green, both builds successful and no high or critical production vulnerabilities. Making these checks required is configured in the repository's branch protection settings.
+A pull request is ready to merge when all three jobs pass: every unit, frontend and E2E test green, both builds and both images successful, the production stack healthy and no high or critical production vulnerabilities. Making these checks required is configured in the repository's branch protection settings.
 
 ## Known limitations
 
@@ -1010,16 +1098,13 @@ A pull request is ready to merge when both jobs pass: every unit, frontend and E
 - The Angular 20 unit-test builder is experimental and only supports Vitest 3. `npm audit` reports a moderate development-only advisory in `@vitest/mocker` (fixed only in Vitest 4.1.11+). It affects the browser-mode mock server, which these tests do not use (they run in jsdom). A critical `tinypool` advisory is avoided with an npm `overrides` entry (`tinypool` ^2.1.2). Both go away with Angular 21, whose builder supports newer Vitest.
 - `npm audit` also reports a pre-existing high-severity advisory in `@modelcontextprotocol/sdk`, a development dependency of `@angular/cli`; it is not part of the application bundle.
 - There are no browser end-to-end tests of the Angular UI; the E2E suite covers the HTTP API.
+- The production web server does not set a Content-Security-Policy for the Angular app (the fonts are loaded from Google Fonts and Angular Material uses inline styles); the API responses carry Helmet's policy.
 
 ---
 
 # Project Status
 
-TaxFlow is currently under active development.
-
-The first eleven phases of the project have been completed, covering the core platform, authentication, REST API, Angular frontend, dashboard, document management, notifications, automation, audit logging, tracked automation runs with background processing, and testing, API documentation and CI.
-
-Phases 12–13 are planned and will extend the project with production hardening and Azure-based infrastructure. A stabilization pass before Phase 10 already added isolated E2E tests and some hardening (login rate limiting, last-admin protection, safe seed).
+**v1.0.0.** All twelve phases are complete: the core platform, authentication, REST API, Angular frontend, dashboard, document management, notifications, automation, audit logging, tracked automation runs, testing with API documentation and CI, and production readiness with Docker images, health checks and release preparation. Changes are listed in [CHANGELOG.md](CHANGELOG.md).
 
 ## Completed Phases
 
@@ -1034,11 +1119,7 @@ Phases 12–13 are planned and will extend the project with production hardening
 - [x] Phase 9 — Audit Logs
 - [x] Phase 10 — Automation & Background Processing
 - [x] Phase 11 — Testing, API Documentation & CI
-
-## Planned
-
-- [ ] Phase 12 — Release Hardening
-- [ ] Phase 13 — Azure Architecture
+- [x] Phase 12 — Production Readiness & Release
 
 ---
 
@@ -1094,17 +1175,26 @@ OpenAPI documentation with Swagger UI and a contract test, frontend unit tests w
 
 **Status: Completed**
 
-### Phase 12 — Release Hardening
+### Phase 12 — Production Readiness & Release
 
-Security review, configuration review, Docker improvements and production-readiness work.
+Production configuration, Docker images for the API and the web app, readiness check, production validation in CI, final security review and the v1.0.0 release.
 
-**Status: Planned**
+**Status: Completed**
 
-### Phase 13 — Azure Architecture
+---
 
-Migration toward Azure services such as Blob Storage, Functions, Service Bus, Entra ID and Azure DevOps CI/CD.
+# Future Improvements
 
-**Status: Planned**
+Not implemented; possible next steps:
+
+- Cloud deployment: the API and web images on a container platform (for example Azure Container Apps or App Service), managed PostgreSQL with `DATABASE_SSL=true`, and a secrets manager for `JWT_SECRET` and database credentials.
+- A cloud implementation of `StorageService` (for example Azure Blob Storage or Amazon S3), so documents no longer depend on a local volume.
+- Running the deadline job in a worker fed by a queue, which would also allow several API instances.
+- ESLint/Prettier and browser end-to-end tests of the Angular UI.
+- Upgrading to Angular 21, whose test builder supports newer Vitest.
+- A Content-Security-Policy for the web app with self-hosted fonts.
+
+---
 
 # License
 
