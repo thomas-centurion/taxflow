@@ -7,11 +7,14 @@ import { AutomationController } from './automation.controller';
 import { DeadlineAutomationService } from './deadline-automation.service';
 import { DeadlineSchedulerService } from './deadline-scheduler.service';
 import { AuditModule } from '../audit/audit.module';
+import { AutomationRun } from './automation-run.entity';
+import { AutomationRunsController } from './automation-runs.controller';
+import { AutomationRunsService } from './automation-runs.service';
 
 @Module({
-  imports: [ScheduleModule.forRoot(), TypeOrmModule.forFeature([TaxObligation]), NotificationsModule, AuditModule],
-  controllers: [AutomationController],
-  providers: [DeadlineAutomationService, DeadlineSchedulerService],
+  imports: [ScheduleModule.forRoot(), TypeOrmModule.forFeature([TaxObligation, AutomationRun]), NotificationsModule, AuditModule],
+  controllers: [AutomationController, AutomationRunsController],
+  providers: [DeadlineAutomationService, DeadlineSchedulerService, AutomationRunsService],
   exports: [DeadlineAutomationService],
 })
 export class AutomationModule {}

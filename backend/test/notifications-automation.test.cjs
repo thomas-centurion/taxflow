@@ -6,6 +6,8 @@ const { NotificationsService } = require('../dist/notifications/notifications.se
 const obligationId = '8de3a564-f432-4b48-a98a-8b2e4ef85493';
 const managerId = 'e75f1f9e-3963-4b0d-a70e-c2bd98cf4c3f';
 const audit = { record: async () => undefined };
+/** Minimal AutomationRunsService double: every obligation gets its own run. */
+const runs = { begin: async (id, trigger) => ({ id: `run-${id}`, taxObligationId: id, trigger }), succeed: async (run, _obligation, result) => { run.status = 'SUCCEEDED'; run.result = result; }, fail: async (run) => { run.status = 'FAILED'; } };
 
 test('deadline automation marks past obligations overdue and sends only actionable deadline notifications', async () => {
   const savedUpdates = [];
@@ -16,12 +18,12 @@ test('deadline automation marks past obligations overdue and sends only actionab
     { id: 'unassigned', dueDate: '2026-10-08', status: 'IN_PROGRESS', responsibleUserId: null, name: 'Unassigned tax', company: { name: 'Acme' } },
     { id: 'later', dueDate: '2026-10-20', status: 'PENDING', responsibleUserId: managerId, name: 'Later tax', company: { name: 'Acme' } },
   ];
-  const repository = { find: async () => records.filter((record) => record.dueDate <= '2026-10-13'), findOne: async ({ where }) => records.find((record) => record.id === where.id), update: async (where, values) => { savedUpdates.push({ where, values }); } };
+  const repository = { find: async () => records.filter((record) => record.dueDate <= '2026-10-13'), findOne: async ({ where }) => records.find((record) => record.id === where.id), update: async (where, values) => { savedUpdates.push({ where, values }); return { affected: 1 }; } };
   const notifier = { notifyDeadline: async (obligation, days) => { notifications.push({ id: obligation.id, days }); return 1; } };
   const dataSource = { transaction: (callback) => callback({ getRepository: () => repository }) };
-  const service = new DeadlineAutomationService(repository, notifier, dataSource, audit);
+  const service = new DeadlineAutomationService(repository, notifier, dataSource, audit, runs);
   const result = await service.checkDeadlines(new Date(2026, 9, 6, 12));
-  assert.deepEqual(result, { checked: 3, notificationsCreated: 2, overdueMarked: 1, skippedWithoutResponsible: 1 });
+  assert.deepEqual(result, { checked: 3, notificationsCreated: 2, overdueMarked: 1, skippedWithoutResponsible: 1, skippedActiveRun: 0, failed: 0 });
   assert.equal(savedUpdates[0].values.status, 'OVERDUE');
   assert.deepEqual(notifications, [{ id: 'past', days: -1 }, { id: 'soon', days: 3 }]);
 });
