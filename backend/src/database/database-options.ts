@@ -18,8 +18,13 @@ export function createDatabaseOptions(
     migrationsTableName: 'typeorm_migrations', synchronize: false, uuidExtension: 'pgcrypto',
     // Production images have no ts-node: the app applies pending migrations on startup when enabled.
     migrationsRun: isEnabled(environment.DATABASE_MIGRATIONS_RUN),
-    // Managed PostgreSQL usually requires TLS; the server certificate is verified.
-    ssl: isEnabled(environment.DATABASE_SSL),
+
+
+    // Managed PostgreSQL uses TLS; certificate verification is disabled for the
+    // shared Supabase pooler because its CA is not available in the container trust store.
+    ssl: isEnabled(environment.DATABASE_SSL)
+      ? { rejectUnauthorized: false }
+      : false,
   };
 }
 
