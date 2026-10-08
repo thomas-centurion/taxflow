@@ -29,7 +29,7 @@ export interface AuditLogView {
   createdAt: Date;
 }
 
-const BUSINESS_ENTITIES = ['Company', 'TaxObligation', 'Document', 'Notification'];
+const BUSINESS_ENTITIES = ['Company', 'TaxObligation', 'Document', 'Notification', 'AutomationRun'];
 
 @Injectable()
 export class AuditLogService {

@@ -1,20 +1,34 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, In, LessThanOrEqual, Repository } from 'typeorm';
+import { DataSource, EntityManager, In, LessThanOrEqual, Repository } from 'typeorm';
 import { TaxObligation } from '../tax-obligations/tax-obligation.entity';
 import { TaxObligationStatus } from '../tax-obligations/tax-obligation-status.enum';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AuditLogService } from '../audit/audit-log.service';
 import { AuditAction } from '../audit/audit-action.enum';
+import { AuthUser } from '../auth/auth-user';
 import { OVERDUE_ELIGIBLE_STATUSES, shouldBecomeOverdue, todayKey } from '../tax-obligations/tax-obligation-rules';
+import { AutomationRun, AutomationRunResult, AutomationRunStatus, AutomationRunTrigger } from './automation-run.entity';
+import { AutomationError, AutomationErrorCode, AutomationRunsService, AutomationRunView } from './automation-runs.service';
+
+/** Obligations that still need deadline follow-up: open ones and those already overdue. */
+export const PROCESSABLE_STATUSES: readonly TaxObligationStatus[] = [...OVERDUE_ELIGIBLE_STATUSES, TaxObligationStatus.OVERDUE];
 
 export interface DeadlineCheckResult {
   checked: number;
   notificationsCreated: number;
   overdueMarked: number;
   skippedWithoutResponsible: number;
+  /** Obligations skipped because another run was already processing them. */
+  skippedActiveRun: number;
+  failed: number;
 }
 
+/**
+ * Deadline compliance processing. Each obligation is processed in its own AutomationRun: overdue
+ * detection (existing rule), deadline notifications (deduplicated) and audit, inside one transaction.
+ * Used by the daily scheduler, the batch endpoint and the manual per-obligation endpoint.
+ */
 @Injectable()
 export class DeadlineAutomationService {
   private readonly logger = new Logger(DeadlineAutomationService.name);
@@ -25,42 +39,94 @@ export class DeadlineAutomationService {
     private readonly notifications: NotificationsService,
     private readonly dataSource: DataSource,
     private readonly audit: AuditLogService,
+    private readonly runs: AutomationRunsService,
   ) {}
 
+  /** Processes every obligation that is overdue or due within the warning window. One failure never stops the batch. */
   async checkDeadlines(now = new Date()): Promise<DeadlineCheckResult> {
     const today = todayKey(now);
-    const lastWarningDate = addDays(today, this.warningDays);
     const records = await this.obligations.find({
-      where: {
-        status: In([...OVERDUE_ELIGIBLE_STATUSES, TaxObligationStatus.OVERDUE]),
-        dueDate: LessThanOrEqual(lastWarningDate),
-      },
-      relations: { company: true },
+      where: { status: In([...PROCESSABLE_STATUSES]), dueDate: LessThanOrEqual(addDays(today, this.warningDays)) },
+      select: { id: true },
       order: { dueDate: 'ASC' },
     });
 
-    const result: DeadlineCheckResult = { checked: records.length, notificationsCreated: 0, overdueMarked: 0, skippedWithoutResponsible: 0 };
+    const result: DeadlineCheckResult = { checked: records.length, notificationsCreated: 0, overdueMarked: 0, skippedWithoutResponsible: 0, skippedActiveRun: 0, failed: 0 };
     for (const obligation of records) {
-      await this.dataSource.transaction(async (manager) => {
-        const repository = manager.getRepository(TaxObligation);
-        const current = await repository.findOne({ where: { id: obligation.id }, relations: { company: true } });
-        if (!current) return;
-        const daysUntilDue = daysBetween(today, current.dueDate);
-        if (shouldBecomeOverdue(current.status, current.dueDate, today)) {
-          await repository.update({ id: current.id, status: current.status }, { status: TaxObligationStatus.OVERDUE });
-          await this.audit.record({ actorType: 'SYSTEM', action: AuditAction.UPDATE, entity: 'TaxObligation', entityId: current.id, metadata: { changes: { status: { before: current.status, after: TaxObligationStatus.OVERDUE } } } }, manager);
-          result.overdueMarked += 1;
-          current.status = TaxObligationStatus.OVERDUE;
+      try {
+        const run = await this.execute(obligation.id, AutomationRunTrigger.SCHEDULED, null, now);
+        if (run.status === AutomationRunStatus.FAILED) result.failed += 1;
+        result.notificationsCreated += run.result?.notificationsCreated ?? 0;
+        if (run.result?.overdueMarked) result.overdueMarked += 1;
+        if (run.result?.withoutResponsible) result.skippedWithoutResponsible += 1;
+      } catch (error) {
+        if (error instanceof ConflictException) result.skippedActiveRun += 1;
+        else {
+          result.failed += 1;
+          this.logger.error(`Deadline check could not process obligation ${obligation.id}: ${error instanceof Error ? error.message : String(error)}`);
         }
-        if (!current.responsibleUserId) {
-          result.skippedWithoutResponsible += 1;
-          return;
-        }
-        result.notificationsCreated += await this.notifications.notifyDeadline(current, daysUntilDue, manager);
-      });
+      }
     }
     this.logger.log(`Deadline check completed: ${JSON.stringify(result)}`);
     return result;
+  }
+
+  /** Manual processing of one obligation, requested by a user. */
+  async processObligation(obligationId: string, actor: AuthUser, now = new Date()): Promise<AutomationRunView> {
+    const obligation = await this.obligations.findOneBy({ id: obligationId });
+    if (!obligation) throw new NotFoundException('Tax obligation not found.');
+    if (!PROCESSABLE_STATUSES.includes(obligation.status)) {
+      throw new ConflictException(`Only PENDING, IN_PROGRESS or OVERDUE obligations can be processed (current status: ${obligation.status}).`);
+    }
+    const run = await this.execute(obligationId, AutomationRunTrigger.MANUAL, actor, now);
+    return this.runs.findOne(run.id);
+  }
+
+  /** Runs the processing inside an AutomationRun. Processing errors end the run as FAILED instead of throwing. */
+  private async execute(obligationId: string, trigger: AutomationRunTrigger, requester: AuthUser | null, now: Date): Promise<AutomationRun> {
+    const run = await this.runs.begin(obligationId, trigger, requester);
+    let outcome: { obligation: TaxObligation; result: AutomationRunResult };
+    try {
+      outcome = await this.dataSource.transaction((manager) => this.process(obligationId, run.id, todayKey(now), manager));
+    } catch (error) {
+      const obligation = await this.obligations.findOne({ where: { id: obligationId }, relations: { company: true } });
+      // A deleted obligation takes its runs with it (cascade): there is nothing left to update.
+      if (!obligation) throw new NotFoundException('Tax obligation not found.');
+      await this.runs.fail(run, obligation, error, requester);
+      return run;
+    }
+    await this.runs.succeed(run, outcome.obligation, outcome.result, requester);
+    return run;
+  }
+
+  /** Overdue detection and deadline alerts for one obligation. Runs in a transaction: on failure nothing is applied. */
+  private async process(obligationId: string, runId: string, today: string, manager: EntityManager): Promise<{ obligation: TaxObligation; result: AutomationRunResult }> {
+    const repository = manager.getRepository(TaxObligation);
+    const current = await repository.findOne({ where: { id: obligationId }, relations: { company: true } });
+    if (!current) throw new AutomationError(AutomationErrorCode.OBLIGATION_NOT_FOUND, 'The obligation no longer exists.');
+    if (!PROCESSABLE_STATUSES.includes(current.status)) {
+      throw new AutomationError(AutomationErrorCode.NOT_PROCESSABLE, `The obligation is ${current.status} and no longer needs deadline processing.`);
+    }
+
+    const previousStatus = current.status;
+    let overdueMarked = false;
+    if (shouldBecomeOverdue(current.status, current.dueDate, today)) {
+      const { affected } = await repository.update({ id: current.id, status: current.status }, { status: TaxObligationStatus.OVERDUE });
+      // The conditional update matched nothing: someone changed the status meanwhile. Roll back; the next run re-evaluates it.
+      if (!affected) throw new AutomationError(AutomationErrorCode.NOT_PROCESSABLE, 'The obligation changed while it was being processed.');
+      await this.audit.record({ actorType: 'SYSTEM', action: AuditAction.UPDATE, entity: 'TaxObligation', entityId: current.id, metadata: { automationRunId: runId, changes: { status: { before: current.status, after: TaxObligationStatus.OVERDUE } } } }, manager);
+      current.status = TaxObligationStatus.OVERDUE;
+      overdueMarked = true;
+    }
+    const daysUntilDue = daysBetween(today, current.dueDate);
+    const notificationsCreated = current.responsibleUserId ? await this.notifications.notifyDeadline(current, daysUntilDue, manager) : 0;
+    return {
+      obligation: current,
+      result: {
+        previousStatus, status: current.status, dueDate: current.dueDate, daysUntilDue, overdueMarked, notificationsCreated,
+        withoutResponsible: !current.responsibleUserId,
+      },
+    };
   }
 }
 
