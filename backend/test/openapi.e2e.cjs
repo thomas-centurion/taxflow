@@ -9,7 +9,7 @@ const baseUrl = process.env.TAXFLOW_API_URL;
 if (!baseUrl) throw new Error('TAXFLOW_API_URL is not set: run E2E tests with "npm run test:e2e".');
 const origin = baseUrl.replace(/\/api$/, '');
 const password = process.env.SEED_USER_PASSWORD;
-const PUBLIC_OPERATIONS = new Set(['post /api/auth/login', 'get /api/health']);
+const PUBLIC_OPERATIONS = new Set(['post /api/auth/login', 'get /api/health', 'get /api/health/ready']);
 
 async function api(method, route, token, body) {
   const headers = {};
@@ -85,7 +85,7 @@ test('the OpenAPI document covers every route with tags, JWT security and error 
   assert.match(await ui.text(), /swagger-ui/i);
 
   const operations = Object.entries(document.paths).flatMap(([route, methods]) => Object.entries(methods).map(([method, operation]) => ({ key: `${method} ${route}`, operation })));
-  assert.ok(operations.length >= 37, `all API operations are documented (${operations.length})`);
+  assert.ok(operations.length >= 38, `all API operations are documented (${operations.length})`);
   for (const { key, operation } of operations) {
     assert.ok(operation.tags?.length === 1, `${key} has a tag`);
     assert.ok(operation.summary, `${key} has a summary`);
@@ -111,6 +111,7 @@ test('real API responses match their documented schemas', async () => {
   const admin = adminLogin.data.accessToken;
 
   await assertDocumented('GET', '/health', await api('GET', '/health'));
+  await assertDocumented('GET', '/health/ready', await api('GET', '/health/ready'));
   await assertDocumented('GET', '/auth/me', await api('GET', '/auth/me', admin));
   await assertDocumented('GET', '/users', await api('GET', '/users?limit=5', admin));
   await assertDocumented('GET', '/users/options', await api('GET', '/users/options', admin));
