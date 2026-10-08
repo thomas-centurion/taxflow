@@ -1,4 +1,5 @@
 import { AuditAction } from '../models/audit-log.model';
+import { AutomationErrorCode, AutomationRunStatus, AutomationRunTrigger } from '../models/automation-run.model';
 import { NotificationType } from '../models/notification.model';
 import { TaxObligationStatus, TaxObligationType } from '../models/tax-obligation.model';
 import { UserRole } from '../models/user.model';
@@ -56,6 +57,9 @@ export const AUDIT_ACTION: Record<AuditAction, { label: string; tone: BadgeTone 
   DOWNLOAD: { label: 'Descarga de documento', tone: 'neutral' },
   MARK_READ: { label: 'Lectura de aviso', tone: 'neutral' },
   NOTIFICATION_CREATED: { label: 'Aviso generado', tone: 'violet' },
+  AUTOMATION_STARTED: { label: 'Automatización iniciada', tone: 'info' },
+  AUTOMATION_SUCCEEDED: { label: 'Automatización completada', tone: 'success' },
+  AUTOMATION_FAILED: { label: 'Automatización fallida', tone: 'danger' },
 };
 
 export const AUDIT_ACTION_OPTIONS: Option<AuditAction>[] = (Object.keys(AUDIT_ACTION) as AuditAction[]).map((value) => ({ value, label: AUDIT_ACTION[value].label }));
@@ -67,6 +71,7 @@ export const AUDIT_ENTITY_LABELS: Record<string, string> = {
   TaxObligation: 'Obligación fiscal',
   Document: 'Documento',
   Notification: 'Notificación',
+  AutomationRun: 'Ejecución automática',
 };
 
 export const AUDIT_ENTITY_OPTIONS: Option<string>[] = Object.entries(AUDIT_ENTITY_LABELS).map(([value, label]) => ({ value, label }));
@@ -79,6 +84,8 @@ export const FIELD_LABELS: Record<string, string> = {
   code: 'Código', isRead: 'Leída', passwordChanged: 'Contraseña cambiada', originalFilename: 'Archivo',
   mimeType: 'Tipo de archivo', size: 'Tamaño', taxObligationId: 'Obligación', title: 'Título', count: 'Cantidad',
   knownUser: 'Usuario existente',
+  trigger: 'Origen', automationRunId: 'Ejecución', overdueMarked: 'Marcada como vencida', notificationsCreated: 'Alertas enviadas',
+  errorCode: 'Código de error',
 };
 
 export const NOTIFICATION_ICONS: Record<NotificationType, string> = {
@@ -86,6 +93,26 @@ export const NOTIFICATION_ICONS: Record<NotificationType, string> = {
   DOCUMENT: 'description',
   SYSTEM: 'sync_alt',
   AUTOMATION: 'autorenew',
+};
+
+export const AUTOMATION_RUN_STATUS: Record<AutomationRunStatus, { label: string; tone: BadgeTone }> = {
+  PENDING: { label: 'En cola', tone: 'neutral' },
+  RUNNING: { label: 'En ejecución', tone: 'info' },
+  SUCCEEDED: { label: 'Completada', tone: 'success' },
+  FAILED: { label: 'Fallida', tone: 'danger' },
+};
+
+export const AUTOMATION_TRIGGER_LABELS: Record<AutomationRunTrigger, string> = {
+  MANUAL: 'Manual',
+  SCHEDULED: 'Programada',
+};
+
+/** What each automation failure means for the user. */
+export const AUTOMATION_ERROR_LABELS: Record<AutomationErrorCode, string> = {
+  OBLIGATION_NOT_FOUND: 'La obligación ya no existe.',
+  NOT_PROCESSABLE: 'La obligación ya no está pendiente, en curso ni vencida.',
+  INTERRUPTED: 'El servidor se reinició antes de terminar. No se aplicó ningún cambio.',
+  INTERNAL_ERROR: 'Ocurrió un error interno durante el procesamiento.',
 };
 
 export function statusLabel(status: TaxObligationStatus): string { return OBLIGATION_STATUS[status]?.label ?? status; }

@@ -1,0 +1,79 @@
+<section class="tf-panel" aria-labelledby="automation-title">
+  <div class="tf-panel-header">
+    <div>
+      <h2 id="automation-title">Procesamiento automático</h2>
+      <p>Controla el vencimiento, marca la obligación como vencida cuando corresponde y envía las alertas al responsable. Se ejecuta todos los días a las 8:00.</p>
+    </div>
+    @if (canManage()) {
+      <div class="tf-panel-header-actions">
+        <button mat-flat-button type="button" (click)="run()" [disabled]="!canRun()" [matTooltip]="blockReason()" [matTooltipDisabled]="!blockReason()">
+          <mat-icon>autorenew</mat-icon> Procesar ahora
+        </button>
+      </div>
+    }
+  </div>
+
+  <div class="tf-panel-body">
+    @if (error()) {
+      <div class="tf-notice" data-tone="danger" role="alert"><mat-icon aria-hidden="true">error</mat-icon><span>{{ error() }}</span></div>
+    } @else if (loading()) {
+      <mat-progress-bar mode="indeterminate" aria-label="Cargando historial de ejecuciones" />
+    } @else {
+      @if (processing()) { <mat-progress-bar mode="indeterminate" class="progress" aria-label="Procesando la obligación" /> }
+
+      @if (latest(); as run) {
+        <div class="current" [attr.data-status]="run.status" aria-live="polite">
+          @switch (run.status) {
+            @case ('SUCCEEDED') {
+              <mat-icon class="state-icon" aria-hidden="true">task_alt</mat-icon>
+              <div class="current-copy">
+                <strong>Última ejecución completada</strong>
+                <span>{{ summary(run) }} · {{ triggerLabels[run.trigger] }} · {{ run.finishedAt | date: 'dd/MM/yyyy HH:mm' }}</span>
+              </div>
+            }
+            @case ('FAILED') {
+              <mat-icon class="state-icon" aria-hidden="true">error</mat-icon>
+              <div class="current-copy">
+                <strong>La última ejecución falló</strong>
+                <span>{{ run.errorCode ? errorLabels[run.errorCode] : 'Error desconocido.' }} · {{ triggerLabels[run.trigger] }} · {{ run.finishedAt | date: 'dd/MM/yyyy HH:mm' }}</span>
+              </div>
+            }
+            @default {
+              <mat-icon class="state-icon" aria-hidden="true">pending</mat-icon>
+              <div class="current-copy">
+                <strong>{{ runStatus[run.status].label }}</strong>
+                <span>Otra ejecución está procesando esta obligación.</span>
+              </div>
+            }
+          }
+        </div>
+      } @else {
+        <p class="tf-muted empty">{{ canManage() && blockReason() ? blockReason() : 'Todavía no se procesó esta obligación.' }}</p>
+      }
+
+      @if (runs().length) {
+        <h3>Historial</h3>
+        <div class="tf-table-scroll">
+          <table class="tf-table history">
+            <thead><tr><th scope="col">Fecha</th><th scope="col">Origen</th><th scope="col">Estado</th><th scope="col">Resultado</th><th scope="col" class="num">Duración</th></tr></thead>
+            <tbody>
+              @for (run of runs(); track run.id) {
+                <tr>
+                  <td class="nowrap">{{ run.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+                  <td>{{ triggerLabels[run.trigger] }}@if (run.trigger === 'MANUAL') { <span class="tf-muted">· {{ personName(run.requestedBy, 'Usuario eliminado') }}</span> }</td>
+                  <td><span class="tf-badge" [attr.data-tone]="runStatus[run.status].tone">{{ runStatus[run.status].label }}</span></td>
+                  <td>
+                    @if (run.status === 'SUCCEEDED') { {{ summary(run) }} }
+                    @else if (run.status === 'FAILED') { <span class="failure">{{ run.errorCode ? errorLabels[run.errorCode] : 'Error' }}</span> }
+                    @else { — }
+                  </td>
+                  <td class="num">{{ duration(run) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    }
+  </div>
+</section>

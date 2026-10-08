@@ -1,4 +1,5 @@
-export type AuditAction = 'CREATE' | 'UPDATE' | 'DELETE' | 'LOGIN' | 'LOGOUT' | 'UPLOAD' | 'DOWNLOAD' | 'MARK_READ' | 'NOTIFICATION_CREATED' | 'LOGIN_FAILED';
+export type AuditAction = 'CREATE' | 'UPDATE' | 'DELETE' | 'LOGIN' | 'LOGOUT' | 'UPLOAD' | 'DOWNLOAD' | 'MARK_READ' | 'NOTIFICATION_CREATED' | 'LOGIN_FAILED'
+  | 'AUTOMATION_STARTED' | 'AUTOMATION_SUCCEEDED' | 'AUTOMATION_FAILED';
 export type AuditActorType = 'USER' | 'SYSTEM';
 
 export interface AuditLog {
