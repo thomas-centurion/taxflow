@@ -85,7 +85,7 @@
           <div class="account" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
             <strong>{{ user.firstName }} {{ user.lastName }}</strong>
             <span>{{ user.email }}</span>
-            <span class="tf-badge tf-badge-plain" data-tone="info">{{ roleLabel(user.role) }}</span>
+            <span class="tf-badge tf-badge-plain">{{ roleLabel(user.role) }}</span>
           </div>
           <mat-divider />
           <button mat-menu-item type="button" (click)="auth.logout()"><mat-icon>logout</mat-icon><span>Cerrar sesión</span></button>
