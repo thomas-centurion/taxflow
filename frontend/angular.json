@@ -22,6 +22,9 @@
           },
           "configurations": {
             "production": {
+              "fileReplacements": [
+                { "replace": "src/app/core/config/api.config.ts", "with": "src/app/core/config/api.config.production.ts" }
+              ],
               "budgets": [
                 { "type": "initial", "maximumWarning": "1.5mb", "maximumError": "2mb" },
                 { "type": "anyComponentStyle", "maximumWarning": "8kb", "maximumError": "12kb" }

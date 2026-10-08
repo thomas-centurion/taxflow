@@ -15,6 +15,14 @@ export function createDatabaseOptions(
   return {
     type: 'postgres', host: environment.DATABASE_HOST || 'localhost', port, username, password,
     database: environment.DATABASE_NAME || 'taxflow', entities: registeredEntities, migrations: registeredMigrations,
-    migrationsTableName: 'typeorm_migrations', migrationsRun: false, synchronize: false, uuidExtension: 'pgcrypto',
+    migrationsTableName: 'typeorm_migrations', synchronize: false, uuidExtension: 'pgcrypto',
+    // Production images have no ts-node: the app applies pending migrations on startup when enabled.
+    migrationsRun: isEnabled(environment.DATABASE_MIGRATIONS_RUN),
+    // Managed PostgreSQL usually requires TLS; the server certificate is verified.
+    ssl: isEnabled(environment.DATABASE_SSL),
   };
+}
+
+function isEnabled(value: string | undefined): boolean {
+  return value?.trim().toLowerCase() === 'true';
 }

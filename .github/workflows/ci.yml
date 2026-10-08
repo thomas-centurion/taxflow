@@ -86,3 +86,41 @@ jobs:
         run: npm test
       - name: Production build
         run: npm run build
+
+  production:
+    name: Production images (Docker build and smoke test)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_NAME: taxflow
+      DATABASE_USER: taxflow
+      DATABASE_PASSWORD: taxflow_ci_only
+      DATABASE_PORT: 5432
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate throwaway secrets
+        run: |
+          JWT_SECRET="$(openssl rand -hex 32)"
+          SEED_USER_PASSWORD="Ci-$(openssl rand -hex 12)"
+          echo "::add-mask::$JWT_SECRET"
+          echo "::add-mask::$SEED_USER_PASSWORD"
+          echo "JWT_SECRET=$JWT_SECRET" >> "$GITHUB_ENV"
+          echo "SEED_USER_PASSWORD=$SEED_USER_PASSWORD" >> "$GITHUB_ENV"
+      - name: Build and start the production stack
+        run: docker compose --profile app up -d --build --wait
+      - name: Smoke test (read-only)
+        run: sh scripts/docker-smoke-test.sh http://localhost:8080
+      - name: The demo seed refuses to run in production
+        run: |
+          if docker compose exec -T backend node dist/database/seed.js; then echo "The seed ran with NODE_ENV=production"; exit 1; fi
+      - name: Demo seed and login through the web server
+        run: |
+          docker compose exec -T -e NODE_ENV=development backend node dist/database/seed.js
+          curl -sf -X POST http://localhost:8080/api/auth/login -H 'content-type: application/json' \
+            -d "{\"email\":\"admin@taxflow.local\",\"password\":\"$SEED_USER_PASSWORD\"}" -o /dev/null
+      - name: Container logs
+        if: failure()
+        run: docker compose --profile app logs --no-color
+      - name: Stop the stack
+        if: always()
+        run: docker compose --profile app down -v
