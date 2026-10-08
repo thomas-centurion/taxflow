@@ -8,9 +8,9 @@ The project is being developed as a portfolio project focused on enterprise-orie
 
 **MVP — actively evolving**
 
-The current version includes authentication, role-based authorization, tax obligation management, dashboards, document management, notifications, scheduled deadline automation and audit logging.
+The current version includes authentication, role-based authorization, tax obligation management, dashboards, document management, notifications, scheduled deadline automation with a tracked execution history (automation runs) and audit logging.
 
-The architecture is designed to evolve toward browser automation and Azure-based infrastructure in future phases.
+The architecture is designed to evolve toward Azure-based infrastructure in future phases.
 
 ---
 
@@ -130,8 +130,9 @@ Current automation includes:
 - Overdue obligation detection
 - Automatic status changes
 - Idempotent notification generation
+- A tracked execution (automation run) per processed obligation, scheduled or manual, with recovery after restarts
 
-A dedicated `automation/` directory is also reserved for future Puppeteer-based tax portal automation.
+See [Automation Runs (Phase 10)](#automation-runs-phase-10).
 
 ### Infrastructure
 
@@ -191,7 +192,6 @@ These cloud integrations are part of the project roadmap and are not currently i
 
 ### Planned
 
-- Puppeteer
 - Azure Blob Storage
 - Azure Functions
 - Azure Service Bus
@@ -663,6 +663,87 @@ No email, SMS, WebSocket or external notification provider is currently used.
 
 ---
 
+## Automation Runs (Phase 10)
+
+Deadline processing used to be a fire-and-forget batch: it changed statuses and sent alerts, but nobody could tell later when an obligation was last checked, by whom, or whether the check failed. Phase 10 turns each processing of an obligation into an **automation run**: a persisted, audited execution with a status, a structured result and a history, that can be triggered by the daily scheduler or on demand from the obligation detail.
+
+### What a run does
+
+For one obligation, inside a single database transaction:
+
+1. checks that the obligation still needs follow-up (`PENDING`, `IN_PROGRESS` or `OVERDUE`);
+2. applies the existing overdue rule (`tax-obligation-rules.ts`): a past-due `PENDING` / `IN_PROGRESS` obligation becomes `OVERDUE`, audited as a `SYSTEM` change linked to the run (`automationRunId`);
+3. sends the deadline alerts that apply (7, 3 and 1 days before, or overdue) to the responsible user, through the existing deduplicated notifications;
+4. returns a structured result: previous and resulting status, days until due, whether it was marked overdue, alerts created and whether the obligation has no responsible user.
+
+No new tax rules are introduced: runs reuse the same rules, notifications and audit log as the rest of the backend, which remains the single source of truth.
+
+### AutomationRun
+
+Each run is stored in `automation_runs` (one obligation has many runs):
+
+| Field | Meaning |
+|---|---|
+| `status` | `PENDING` → `RUNNING` → `SUCCEEDED` \| `FAILED`. Independent from the obligation status |
+| `trigger` | `MANUAL` (a user) or `SCHEDULED` (the daily job) |
+| `requestedBy` | The user for manual runs, `null` for scheduled ones |
+| `startedAt` / `finishedAt` | Execution window (the result also stores `durationMs`) |
+| `result` | The structured outcome described above |
+| `errorCode` / `errorMessage` | Stable code and a non-sensitive message when the run failed |
+
+### Scheduler
+
+The existing NestJS job (`DeadlineSchedulerService`, daily at 08:00 in the backend process timezone) selects the obligations that need processing (open or overdue and due within 7 days) and processes each one in its own `SCHEDULED` run. Every obligation is handled independently: a failure is recorded on that obligation's run and the batch continues. `POST /api/automation/check-deadlines` runs the same batch on demand and returns a summary:
+
+```json
+{ "checked": 12, "notificationsCreated": 3, "overdueMarked": 1, "skippedWithoutResponsible": 0, "skippedActiveRun": 0, "failed": 0 }
+```
+
+### Avoiding duplicates
+
+- **One active run per obligation:** a partial unique index (`status IN ('PENDING','RUNNING')`) makes PostgreSQL reject a second concurrent run, even across simultaneous requests. A manual request gets `409 Conflict`; the scheduler skips the obligation (`skippedActiveRun`).
+- **Idempotent effects:** the overdue change is a conditional update, and deadline alerts use the existing notification deduplication keys. Running the same obligation twice records two runs but never changes or notifies twice.
+
+### Errors and recovery
+
+| `errorCode` | Meaning |
+|---|---|
+| `NOT_PROCESSABLE` | The obligation stopped needing follow-up (e.g. it was submitted), or its status changed while the run was processing it |
+| `OBLIGATION_NOT_FOUND` | The obligation no longer exists |
+| `INTERRUPTED` | The backend restarted while the run was active |
+| `INTERNAL_ERROR` | Any unexpected error (its raw message is only logged, never stored) |
+
+Because the processing is transactional, a failed or interrupted run leaves the obligation untouched. On startup, runs left `PENDING` / `RUNNING` by a previous process are marked `FAILED` with `INTERRUPTED`; the next run simply processes the obligation again.
+
+### Audit and notifications
+
+- Audit: `AUTOMATION_STARTED`, `AUTOMATION_SUCCEEDED` and `AUTOMATION_FAILED` on the `AutomationRun` entity (visible to `ADMIN` and `TAX_MANAGER`), attributed to the requesting user or to `SYSTEM`, plus the `SYSTEM` status change on the obligation.
+- Notifications (type `AUTOMATION`, one per run and recipient): a manual run confirms its result to the requester; a failed run notifies the requester and the responsible user. Successful scheduled runs add nothing beyond the regular deadline alerts.
+
+### API
+
+```http
+POST /api/tax-obligations/:id/automation-runs   # ADMIN, TAX_MANAGER — processes now, 201 with the finished run
+GET  /api/tax-obligations/:id/automation-runs   # any authenticated role — last 20 runs, newest first
+GET  /api/automation-runs/:id                   # any authenticated role
+```
+
+`POST` returns `409` when the obligation is `SUBMITTED`, `APPROVED` or `CANCELLED`, or is already being processed. A run that fails still answers `201`: the failure is part of the run (`status: FAILED`). All routes require a JWT; none is public.
+
+### Running it manually
+
+Apply the migrations (`npm --prefix backend run migration:run`, Phase 10 adds `automation_runs`), open an obligation and use **Procesar ahora** in the *Procesamiento automático* panel. The panel shows the latest run and the history of manual and scheduled runs.
+
+### Limitations and evolution
+
+- Runs execute synchronously inside the API process. That is enough here because processing is a short database operation, but a long batch holds one Node.js process.
+- Restart recovery assumes a single backend instance: with several instances, one could mark another instance's active runs as interrupted.
+- Run history grows by one row per obligation per scheduled day while it remains open or overdue; there is no retention policy yet.
+- There are no automatic retries: a failed obligation is retried by the next scheduled run or manually.
+- In production, the scheduler would publish one message per obligation to a queue (for example Azure Service Bus) consumed by workers (Azure Functions or container jobs) with retries, back-off and dead-lettering, and a distributed lock or a leased status would replace the startup recovery. `AutomationRun` and its partial unique index keep working unchanged in that model.
+
+---
+
 ## Audit Logs
 
 TaxFlow maintains a persistent audit trail for relevant business actions.
@@ -708,6 +789,7 @@ The system audits relevant actions involving:
 - Tax obligations
 - Documents
 - Notifications
+- Automation runs
 
 Examples include:
 
@@ -720,6 +802,9 @@ LOGIN_FAILED
 LOGOUT
 UPLOAD
 DOWNLOAD
+AUTOMATION_STARTED
+AUTOMATION_SUCCEEDED
+AUTOMATION_FAILED
 ```
 
 Updates record only fields that actually changed.
@@ -751,7 +836,7 @@ For example:
 PENDING → OVERDUE
 ```
 
-performed by the deadline scheduler is attributed to the system rather than a human user.
+performed by the deadline scheduler is attributed to the system rather than a human user. The same applies when a user runs the processing manually: the run is attributed to the user, while the status change comes from the system rule and references the run (`automationRunId`).
 
 ### Sensitive Information
 
@@ -855,7 +940,7 @@ Frontend build:
 npm --prefix frontend run build
 ```
 
-The test suite currently covers authentication, login rate limiting, authorization, CRUD operations, relation integrity, status transitions, documents, notifications, deadline automation, audit logging and seed safety.
+The test suite currently covers authentication, login rate limiting, authorization, CRUD operations, relation integrity, status transitions, documents, notifications, deadline automation, automation runs (lifecycle, idempotency, concurrency, restart recovery, scheduler and API), audit logging and seed safety.
 
 Frontend component/browser testing is not currently implemented as a full automated suite.
 
@@ -865,9 +950,9 @@ Frontend component/browser testing is not currently implemented as a full automa
 
 TaxFlow is currently under active development.
 
-The first nine phases of the project have been completed, covering the core platform, authentication, REST API, Angular frontend, dashboard, document management, notifications, automation and audit logging.
+The first ten phases of the project have been completed, covering the core platform, authentication, REST API, Angular frontend, dashboard, document management, notifications, automation, audit logging and tracked automation runs with background processing.
 
-Phases 10–13 are planned and will extend the project with browser automation, expanded testing and documentation, production hardening and Azure-based infrastructure. A pre-Phase 10 stabilization pass has already added isolated E2E tests and some hardening (login rate limiting, last-admin protection, safe seed), but those phases have not started as such.
+Phases 11–13 are planned and will extend the project with expanded testing and documentation, production hardening and Azure-based infrastructure. A stabilization pass before Phase 10 already added isolated E2E tests and some hardening (login rate limiting, last-admin protection, safe seed).
 
 ## Completed Phases
 
@@ -880,10 +965,10 @@ Phases 10–13 are planned and will extend the project with browser automation, 
 - [x] Phase 7 — Document Management
 - [x] Phase 8 — Notifications & Automation
 - [x] Phase 9 — Audit Logs
+- [x] Phase 10 — Automation & Background Processing
 
 ## Planned
 
-- [ ] Phase 10 — Puppeteer Automation
 - [ ] Phase 11 — Testing & API Documentation
 - [ ] Phase 12 — Release Hardening
 - [ ] Phase 13 — Azure Architecture
@@ -930,11 +1015,11 @@ Persistent notifications, deadline monitoring, idempotency and scheduled process
 
 Persistent audit trail, business event tracking and audit visualization.
 
-### Phase 10 — Puppeteer Automation
+### Phase 10 — Automation & Background Processing
 
-Browser-based automation against a controlled mock tax portal.
+Tracked automation runs per obligation (manual or scheduled), idempotent and concurrency-safe execution, error handling, restart recovery, audit, notifications and run history.
 
-**Status: Planned**
+**Status: Completed**
 
 ### Phase 11 — Testing & API Documentation
 
