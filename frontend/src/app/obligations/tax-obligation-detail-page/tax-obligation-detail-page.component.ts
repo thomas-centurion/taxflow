@@ -24,6 +24,7 @@ import { DueDateComponent } from '../../shared/ui/due-date.component';
 import { EmptyStateComponent, ErrorStateComponent, LoadingRowsComponent } from '../../shared/ui/states.component';
 import { StatusBadgeComponent } from '../../shared/ui/status-badge.component';
 import { ObligationEditorService } from '../obligation-editor.service';
+import { ObligationAutomationPanelComponent } from '../obligation-automation-panel/obligation-automation-panel.component';
 
 /** Client-side pre-check mirroring the API's accepted files; the API still validates content. */
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -35,7 +36,7 @@ const ALLOWED_FILE_TYPES: Record<string, string> = {
 
 @Component({
   selector: 'app-tax-obligation-detail-page',
-  imports: [DatePipe, RouterLink, MatButtonModule, MatIconModule, MatProgressBarModule, MatTooltipModule, DueDateComponent, EmptyStateComponent, ErrorStateComponent, LoadingRowsComponent, StatusBadgeComponent],
+  imports: [DatePipe, RouterLink, MatButtonModule, MatIconModule, MatProgressBarModule, MatTooltipModule, DueDateComponent, EmptyStateComponent, ErrorStateComponent, LoadingRowsComponent, ObligationAutomationPanelComponent, StatusBadgeComponent],
   templateUrl: './tax-obligation-detail-page.component.html',
   styleUrl: './tax-obligation-detail-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

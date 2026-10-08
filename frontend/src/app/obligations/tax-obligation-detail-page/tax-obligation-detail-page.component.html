@@ -43,6 +43,8 @@
     </div>
   </section>
 
+  <app-obligation-automation-panel [obligation]="item" [canManage]="canManage" (changed)="reload()" />
+
   <section class="tf-panel documents" aria-labelledby="documents-title">
     <div class="tf-panel-header">
       <div><h2 id="documents-title">Documentos</h2><p>Respaldo de la presentación: declaraciones, comprobantes y papeles de trabajo.</p></div>
