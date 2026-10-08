@@ -92,6 +92,21 @@ export class NotificationsService {
     }, manager);
   }
 
+  /** Tells each recipient (deduplicated) how an automation run ended. One notification per run and user. */
+  async notifyAutomationResult(input: { runId: string; taxObligationId: string; userIds: (string | null | undefined)[]; title: string; message: string }): Promise<void> {
+    const recipients = [...new Set(input.userIds.filter((id): id is string => !!id))];
+    for (const userId of recipients) {
+      await this.createOnce({
+        userId,
+        title: input.title,
+        message: input.message,
+        type: NotificationType.AUTOMATION,
+        taxObligationId: input.taxObligationId,
+        dedupeKey: `automation:${input.runId}:${userId}`,
+      });
+    }
+  }
+
   async notifyDeadline(obligation: TaxObligation, daysUntilDue: number, manager?: EntityManager): Promise<number> {
     if (!obligation.responsibleUserId) return 0;
     const companyName = obligation.company?.name ?? 'la empresa';

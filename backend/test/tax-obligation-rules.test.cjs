@@ -129,10 +129,10 @@ test('deadline automation marks only PENDING/IN_PROGRESS as OVERDUE and never SU
   const repository = {
     find: async ({ where }) => { queriedStatuses = where.status.value; return records; },
     findOne: async ({ where }) => ({ ...records.find((record) => record.id === where.id) }),
-    update: async (where, values) => { updates.push({ id: where.id, values }); },
+    update: async (where, values) => { updates.push({ id: where.id, values }); return { affected: 1 }; },
   };
   const dataSource = { transaction: (callback) => callback({ getRepository: () => repository }) };
-  const service = new DeadlineAutomationService(repository, { notifyDeadline: async () => 0 }, dataSource, audit);
+  const service = new DeadlineAutomationService(repository, { notifyDeadline: async () => 0 }, dataSource, audit, { begin: async (id, trigger) => ({ id: `run-${id}`, taxObligationId: id, trigger }), succeed: async (run, _obligation, result) => { run.status = 'SUCCEEDED'; run.result = result; }, fail: async (run) => { run.status = 'FAILED'; } });
   const result = await service.checkDeadlines(new Date(2026, 9, 7, 12));
   assert.deepEqual([...queriedStatuses].sort(), ['IN_PROGRESS', 'OVERDUE', 'PENDING']);
   assert.deepEqual(updates.map((update) => update.id), ['pending', 'in-progress']);
