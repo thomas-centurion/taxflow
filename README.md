@@ -8,7 +8,7 @@ The project is being developed as a portfolio project focused on enterprise-orie
 
 **MVP — actively evolving**
 
-The current version includes authentication, role-based authorization, tax obligation management, dashboards, document management, notifications, scheduled deadline automation with a tracked execution history (automation runs) and audit logging.
+The current version includes authentication, role-based authorization, tax obligation management, dashboards, document management, notifications, scheduled deadline automation with a tracked execution history (automation runs), audit logging, OpenAPI documentation (Swagger) and a GitHub Actions pipeline that runs the unit, frontend and E2E tests on every pull request.
 
 The architecture is designed to evolve toward Azure-based infrastructure in future phases.
 
@@ -34,7 +34,9 @@ The architecture is designed to evolve toward Azure-based infrastructure in futu
 - Pagination and filtering
 - Backend validation
 - Database migrations
-- Unit and integration tests
+- Unit, frontend and E2E tests
+- OpenAPI / Swagger documentation
+- Continuous integration with GitHub Actions
 - Dockerized PostgreSQL environment
 
 ---
@@ -187,8 +189,14 @@ These cloud integrations are part of the project roadmap and are not currently i
 
 ### Testing
 
-- Node.js built-in test runner (`node:test`)
-- HTTP E2E tests (`fetch`) against an isolated test database
+- Node.js built-in test runner (`node:test`) for backend unit tests
+- HTTP E2E tests (`fetch`) against an isolated test database, including an OpenAPI contract test
+- Vitest with jsdom through the Angular `@angular/build:unit-test` builder for frontend tests
+
+### API Documentation and CI
+
+- Swagger / OpenAPI (`@nestjs/swagger`)
+- GitHub Actions
 
 ### Planned
 
@@ -224,7 +232,7 @@ User administration rules:
 
 ### Requirements
 
-- Node.js 22 LTS
+- Node.js 22 LTS (22.12 or later)
 - npm
 - Docker Desktop or Docker Engine with Docker Compose v2
 
@@ -301,6 +309,14 @@ Health check:
 http://localhost:3002/api/health
 ```
 
+API documentation (Swagger UI):
+
+```text
+http://localhost:3002/api/docs
+```
+
+See [API Documentation](#api-documentation).
+
 ### 7. Start Angular
 
 In another terminal:
@@ -353,6 +369,9 @@ JWT_EXPIRES_IN=1d
 # Optional: login rate limit per client IP + email (defaults shown)
 LOGIN_THROTTLE_LIMIT=5
 LOGIN_THROTTLE_TTL_SECONDS=60
+
+# Optional: Swagger UI at /api/docs (on by default except with NODE_ENV=production)
+# SWAGGER_ENABLED=false
 ```
 
 Do not commit `.env`.
@@ -379,6 +398,29 @@ Password: Admin123!
 The seed users share the configured development password.
 
 > These credentials are intended only for local development and must not be reused in production.
+
+---
+
+# API Documentation
+
+The backend publishes an OpenAPI 3 document generated from the NestJS controllers and DTOs with `@nestjs/swagger`.
+
+| URL | Content |
+|---|---|
+| `http://localhost:3002/api/docs` | Swagger UI |
+| `http://localhost:3002/api/docs-json` | OpenAPI document (JSON) |
+
+It documents every endpoint (37 operations in 10 tags: Auth, Users, Countries, Companies, Tax Obligations, Documents, Notifications, Audit Logs, Automation Runs and Health) with path and query parameters, request bodies, response schemas, the roles allowed, and the main error responses (`400`, `401`, `403`, `404`, `409`, `413`, `429`). Errors keep the NestJS format `{ statusCode, message, error? }`.
+
+**Trying protected endpoints:**
+
+1. Start the backend (`npm --prefix backend run start:dev`) and open `/api/docs`.
+2. Run `POST /api/auth/login` with a seed user (see [Development Credentials](#development-credentials)) and copy `accessToken`.
+3. Press **Authorize**, paste the token (without the `Bearer` prefix) and confirm. Swagger UI keeps it after page reloads.
+
+**Availability:** Swagger is enabled by default in development and test, and disabled when `NODE_ENV=production`. `SWAGGER_ENABLED=true|false` overrides it in any environment. The document only describes the API: it contains no secrets or credentials.
+
+**Keeping it accurate:** response schemas are DTO classes (`*-response.dto.ts`) that implement the service interfaces or pick the entity columns, so TypeScript flags most drift. The E2E test `backend/test/openapi.e2e.cjs` also validates real responses against the documented schemas and fails on undocumented or missing properties. Properties use explicit `@ApiProperty` decorators instead of the Swagger CLI plugin: the plugin generates broken imports when the project path contains non-ASCII characters.
 
 ---
 
@@ -907,17 +949,19 @@ The seed only inserts missing records (it never changes passwords, roles, active
 
 # Testing
 
-Backend unit tests:
+| Command | What it runs |
+|---|---|
+| `npm --prefix backend test` | Backend build and unit tests (`node:test`, `backend/test/*.test.cjs`) |
+| `npm --prefix backend run test:e2e` | Backend build and E2E tests against `taxflow_test` (`backend/test/*.e2e.cjs`) |
+| `npm --prefix backend run test:ci` | One build, then unit and E2E tests (used by CI) |
+| `npm --prefix frontend test` | Frontend unit tests (Vitest + jsdom), single run |
+| `npm --prefix frontend run test:watch` | Frontend unit tests in watch mode |
+| `npm test` (root) | Backend unit tests and frontend tests |
+| `npm run test:e2e` (root) | Backend E2E tests |
 
-```powershell
-npm --prefix backend test
-```
+### Backend
 
-Backend integration/E2E tests:
-
-```powershell
-npm --prefix backend run test:e2e
-```
+Unit tests exercise services, rules and guards with in-memory doubles. E2E tests exercise the real HTTP API, PostgreSQL, authentication and authorization, documents, notifications, automation runs and audit logs.
 
 The E2E runner (`backend/test/run-e2e.cjs`) never uses the development database or API. On every run it:
 
@@ -928,21 +972,44 @@ The E2E runner (`backend/test/run-e2e.cjs`) never uses the development database 
 
 PostgreSQL must be running (`docker compose up -d postgres`). The development backend can keep running on `3002`. E2E files refuse to run without the runner-provided `TAXFLOW_API_URL`.
 
-Backend build:
+The backend suite covers authentication (including forged, unsigned, expired and tampered JWTs, and the immediate revocation of a deactivated user's tokens), login rate limiting, authorization, CRUD operations, relation integrity, status transitions and overdue rules, last-admin protection, documents, notifications, deadline automation, automation runs (lifecycle, idempotency, concurrency, restart recovery, scheduler and API), audit logging, seed safety and the OpenAPI contract.
+
+### Frontend
+
+Frontend tests use the Angular CLI unit-test builder (`@angular/build:unit-test`, experimental in Angular 20) with Vitest and jsdom: no browser is needed. Spec files live next to the code (`*.spec.ts`) and shared fixtures in `frontend/src/testing/`.
+
+They focus on logic that can break: session handling (`AuthService`), the HTTP interceptor, route guards, API error translation, API services, dashboard metrics, calendar-date helpers, the paginated list state, audit log formatting, the due-date component, the obligation form and the automation panel. Purely presentational templates are not tested one by one.
+
+### Builds
 
 ```powershell
 npm --prefix backend run build
-```
-
-Frontend build:
-
-```powershell
 npm --prefix frontend run build
 ```
 
-The test suite currently covers authentication, login rate limiting, authorization, CRUD operations, relation integrity, status transitions, documents, notifications, deadline automation, automation runs (lifecycle, idempotency, concurrency, restart recovery, scheduler and API), audit logging and seed safety.
+---
 
-Frontend component/browser testing is not currently implemented as a full automated suite.
+# Continuous Integration
+
+GitHub Actions runs `.github/workflows/ci.yml` on every pull request, on pushes to `main` and on demand. A newer push to the same branch cancels the run in progress. Two jobs run in parallel on Node.js 22 with the npm cache:
+
+| Job | Steps |
+|---|---|
+| **Backend** | `npm ci` → production dependency audit → build → unit tests → E2E tests against `taxflow_test` |
+| **Frontend** | `npm ci` → production dependency audit → unit tests → production build |
+
+The backend job starts a PostgreSQL 16 service container just for the job; it never uses a developer database. The database password is a fixed CI-only value for that disposable container, and `JWT_SECRET` and `SEED_USER_PASSWORD` are generated randomly on every run and masked in the logs. No repository secrets are needed.
+
+The dependency audit fails the job on high or critical vulnerabilities in **production** dependencies. Development-only tooling advisories are reported by `npm audit` but do not fail CI (see [Known limitations](#known-limitations)).
+
+A pull request is ready to merge when both jobs pass: every unit, frontend and E2E test green, both builds successful and no high or critical production vulnerabilities. Making these checks required is configured in the repository's branch protection settings.
+
+## Known limitations
+
+- There is no ESLint/Prettier setup yet. Static checking relies on strict TypeScript compilation (backend, and frontend with `strictTemplates`), which CI runs through the builds.
+- The Angular 20 unit-test builder is experimental and only supports Vitest 3. `npm audit` reports a moderate development-only advisory in `@vitest/mocker` (fixed only in Vitest 4.1.11+). It affects the browser-mode mock server, which these tests do not use (they run in jsdom). A critical `tinypool` advisory is avoided with an npm `overrides` entry (`tinypool` ^2.1.2). Both go away with Angular 21, whose builder supports newer Vitest.
+- `npm audit` also reports a pre-existing high-severity advisory in `@modelcontextprotocol/sdk`, a development dependency of `@angular/cli`; it is not part of the application bundle.
+- There are no browser end-to-end tests of the Angular UI; the E2E suite covers the HTTP API.
 
 ---
 
@@ -950,9 +1017,9 @@ Frontend component/browser testing is not currently implemented as a full automa
 
 TaxFlow is currently under active development.
 
-The first ten phases of the project have been completed, covering the core platform, authentication, REST API, Angular frontend, dashboard, document management, notifications, automation, audit logging and tracked automation runs with background processing.
+The first eleven phases of the project have been completed, covering the core platform, authentication, REST API, Angular frontend, dashboard, document management, notifications, automation, audit logging, tracked automation runs with background processing, and testing, API documentation and CI.
 
-Phases 11–13 are planned and will extend the project with expanded testing and documentation, production hardening and Azure-based infrastructure. A stabilization pass before Phase 10 already added isolated E2E tests and some hardening (login rate limiting, last-admin protection, safe seed).
+Phases 12–13 are planned and will extend the project with production hardening and Azure-based infrastructure. A stabilization pass before Phase 10 already added isolated E2E tests and some hardening (login rate limiting, last-admin protection, safe seed).
 
 ## Completed Phases
 
@@ -966,10 +1033,10 @@ Phases 11–13 are planned and will extend the project with expanded testing and
 - [x] Phase 8 — Notifications & Automation
 - [x] Phase 9 — Audit Logs
 - [x] Phase 10 — Automation & Background Processing
+- [x] Phase 11 — Testing, API Documentation & CI
 
 ## Planned
 
-- [ ] Phase 11 — Testing & API Documentation
 - [ ] Phase 12 — Release Hardening
 - [ ] Phase 13 — Azure Architecture
 
@@ -1021,11 +1088,11 @@ Tracked automation runs per obligation (manual or scheduled), idempotent and con
 
 **Status: Completed**
 
-### Phase 11 — Testing & API Documentation
+### Phase 11 — Testing, API Documentation & CI
 
-Expanded automated testing, API documentation with Swagger and developer experience improvements.
+OpenAPI documentation with Swagger UI and a contract test, frontend unit tests with Vitest, additional authentication E2E tests and a GitHub Actions pipeline for pull requests.
 
-**Status: Planned**
+**Status: Completed**
 
 ### Phase 12 — Release Hardening
 

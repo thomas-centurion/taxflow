@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
+import { isSwaggerEnabled, setupSwagger } from './common/swagger/swagger';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
@@ -22,6 +23,7 @@ async function bootstrap(): Promise<void> {
       forbidNonWhitelisted: true,
     }),
   );
+  if (isSwaggerEnabled({ SWAGGER_ENABLED: config.get<string>('SWAGGER_ENABLED'), NODE_ENV: config.get<string>('NODE_ENV') })) setupSwagger(app);
 
   const port = Number(config.get<string>('PORT', '3002'));
   await app.listen(port);
