@@ -1,5 +1,8 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 const { loggerLevels, trustProxySetting } = require('../dist/common/runtime-options');
 const { createDatabaseOptions } = require('../dist/database/database-options');
 
@@ -29,4 +32,24 @@ test('migrations on startup and TLS are opt-in, and the schema is never synchron
   assert.equal(production.migrationsRun, true);
   assert.equal(production.ssl, true);
   assert.throws(() => createDatabaseOptions({ DATABASE_USER: 'taxflow' }, [], []), /DATABASE_USER and DATABASE_PASSWORD/);
+});
+
+test('TLS always verifies the server certificate, against a configured private CA when given', (t) => {
+  const pem = '-----BEGIN CERTIFICATE-----\nMIIBfake\n-----END CERTIFICATE-----\n';
+  const tls = { ...credentials, DATABASE_SSL: 'true' };
+
+  const inline = createDatabaseOptions({ ...tls, DATABASE_SSL_CA: pem.replace(/\n/g, '\\n') }, [], []);
+  assert.deepEqual(inline.ssl, { ca: pem, rejectUnauthorized: true }, 'escaped line breaks are restored');
+  assert.deepEqual(createDatabaseOptions({ ...tls, DATABASE_SSL_CA: pem }, [], []).ssl, { ca: pem.trim(), rejectUnauthorized: true });
+
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'taxflow-ca-'));
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
+  const file = path.join(directory, 'ca.crt');
+  fs.writeFileSync(file, pem);
+  assert.deepEqual(createDatabaseOptions({ ...tls, DATABASE_SSL_CA_FILE: file }, [], []).ssl, { ca: pem, rejectUnauthorized: true });
+
+  assert.throws(() => createDatabaseOptions({ ...tls, DATABASE_SSL_CA_FILE: path.join(directory, 'missing.crt') }, [], []), /DATABASE_SSL_CA_FILE could not be read/);
+  assert.throws(() => createDatabaseOptions({ ...tls, DATABASE_SSL_CA: 'not a certificate' }, [], []), /PEM certificate/);
+  assert.throws(() => createDatabaseOptions({ ...tls, DATABASE_SSL_CA: pem, DATABASE_SSL_CA_FILE: file }, [], []), /only one/);
+  assert.throws(() => createDatabaseOptions({ ...credentials, DATABASE_SSL_CA: pem }, [], []), /require DATABASE_SSL=true/, 'a CA never silently means a plain-text connection');
 });
