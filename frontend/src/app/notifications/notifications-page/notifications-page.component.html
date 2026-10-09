@@ -1,7 +1,9 @@
 <app-page-header title="Notificaciones" subtitle="Vencimientos, documentos y cambios de estado de tus obligaciones asignadas.">
-  <button mat-stroked-button type="button" (click)="markAllRead()" [disabled]="unreadCount() === 0">
-    <mat-icon>done_all</mat-icon> Marcar todas como leídas
-  </button>
+  @if (!readOnly) {
+    <button mat-stroked-button type="button" (click)="markAllRead()" [disabled]="unreadCount() === 0">
+      <mat-icon>done_all</mat-icon> Marcar todas como leídas
+    </button>
+  }
 </app-page-header>
 
 <section class="tf-panel" aria-label="Notificaciones">

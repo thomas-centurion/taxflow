@@ -36,7 +36,7 @@ export class CompaniesPageComponent {
   private readonly feedback = inject(FeedbackService);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly canWrite = inject(AuthService).hasRole('ADMIN', 'TAX_MANAGER');
+  readonly canWrite = inject(AuthService).canWrite('ADMIN', 'TAX_MANAGER');
   readonly columns = ['name', 'taxId', 'country', 'status', 'actions'];
   readonly searchControl = new FormControl('', { nonNullable: true });
   readonly list = new PagedList<Company>((query) => this.api.list(query.page, query.limit, query.search), 'No se pudieron cargar las empresas.', this.destroyRef);

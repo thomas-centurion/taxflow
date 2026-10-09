@@ -9,6 +9,7 @@ export class AuthUserDto implements AuthUser {
   @ApiProperty({ example: 'manager@taxflow.local' }) email!: string;
   @ApiProperty({ enum: UserRole, enumName: 'UserRole' }) role!: UserRole;
   @ApiProperty() isActive!: boolean;
+  @ApiProperty({ description: 'Read-only demo account (DEMO_READ_ONLY_EMAILS): every write answers 403.' }) readOnly!: boolean;
 }
 
 export class LoginResponseDto {

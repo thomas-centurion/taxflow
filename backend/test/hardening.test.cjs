@@ -97,7 +97,7 @@ function authService(user) {
   const events = [];
   let compared = 0;
   const builder = { addSelect() { return this; }, where() { return this; }, getOne: async () => user };
-  const service = new AuthService({ createQueryBuilder: () => builder }, { signAsync: async () => 'token' }, { record: async (event) => { events.push(event); } });
+  const service = new AuthService({ createQueryBuilder: () => builder }, { signAsync: async () => 'token' }, { record: async (event) => { events.push(event); } }, { isReadOnly: () => false });
   const originalCompare = bcrypt.compare;
   return { service, events, run: async (fn) => { bcrypt.compare = async (...args) => { compared += 1; return originalCompare(...args); }; try { return await fn(); } finally { bcrypt.compare = originalCompare; } }, compared: () => compared };
 }
@@ -123,8 +123,8 @@ test('audit date filters use local calendar days and reject inverted ranges', as
   assert.equal(startOfLocalDay('2028-02-28', 1).getTime(), new Date(2028, 1, 29).getTime());
   const builder = { leftJoinAndSelect() { return this; }, andWhere() { return this; }, orderBy() { return this; }, addOrderBy() { return this; }, skip() { return this; }, take() { return this; }, getManyAndCount: async () => [[], 0] };
   const service = new AuditLogService({ createQueryBuilder: () => builder });
-  await assert.rejects(() => service.findAll({ page: 1, limit: 20, dateFrom: '2026-10-08', dateTo: '2026-10-01' }, UserRole.ADMIN), { status: 400 });
-  await service.findAll({ page: 1, limit: 20, dateFrom: '2026-10-07', dateTo: '2026-10-07' }, UserRole.ADMIN);
+  await assert.rejects(() => service.findAll({ page: 1, limit: 20, dateFrom: '2026-10-08', dateTo: '2026-10-01' }, true), { status: 400 });
+  await service.findAll({ page: 1, limit: 20, dateFrom: '2026-10-07', dateTo: '2026-10-07' }, true);
 });
 
 function companiesService({ hasObligations }) {

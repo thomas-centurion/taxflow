@@ -56,7 +56,7 @@ export class TaxObligationsPageComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly canWrite = inject(AuthService).hasRole('ADMIN', 'TAX_MANAGER');
+  readonly canWrite = inject(AuthService).canWrite('ADMIN', 'TAX_MANAGER');
   readonly columns = this.canWrite
     ? ['name', 'company', 'dueDate', 'status', 'responsible', 'actions']
     : ['name', 'company', 'dueDate', 'status', 'responsible'];

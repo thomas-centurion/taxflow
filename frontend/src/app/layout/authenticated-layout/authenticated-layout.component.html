@@ -39,6 +39,9 @@
       }
       <span class="section">{{ sectionTitle() }}</span>
       <span class="spacer"></span>
+      @if (readOnly) {
+        <span class="tf-badge" data-tone="info" matTooltip="Cuenta de demostración: podés recorrer y descargar, pero no modificar datos.">Demo · solo lectura</span>
+      }
 
       <button mat-icon-button type="button" class="bell" [matMenuTriggerFor]="notificationMenu" (menuOpened)="loadNotifications()"
         [attr.aria-label]="unreadCount() ? 'Notificaciones, ' + unreadCount() + ' sin leer' : 'Notificaciones'" matTooltip="Notificaciones">
@@ -48,7 +51,7 @@
       <mat-menu #notificationMenu="matMenu" class="tf-notification-menu" xPosition="before">
         <div class="menu-head" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
           <strong>Notificaciones</strong>
-          @if (unreadCount() > 0) {
+          @if (unreadCount() > 0 && !readOnly) {
             <button mat-button type="button" class="menu-link" (click)="markAllNotificationsRead()">Marcar todas como leídas</button>
           }
         </div>

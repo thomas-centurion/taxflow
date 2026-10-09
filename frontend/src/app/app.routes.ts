@@ -16,7 +16,7 @@ export const routes: Routes = [
       { path: 'notifications', title: 'Notificaciones · TaxFlow', data: { section: 'Notificaciones' }, loadComponent: () => import('./notifications/notifications-page/notifications-page.component').then((module) => module.NotificationsPageComponent) },
       { path: 'users', title: 'Usuarios · TaxFlow', canActivate: [roleGuard], data: { roles: ['ADMIN'], section: 'Administración' }, loadComponent: () => import('./users/users-page/users-page.component').then((module) => module.UsersPageComponent) },
       { path: 'countries', title: 'Países · TaxFlow', canActivate: [roleGuard], data: { roles: ['ADMIN'], section: 'Administración' }, loadComponent: () => import('./countries/countries-page/countries-page.component').then((module) => module.CountriesPageComponent) },
-      { path: 'audit-logs', title: 'Auditoría · TaxFlow', canActivate: [roleGuard], data: { roles: ['ADMIN', 'TAX_MANAGER'], section: 'Administración' }, loadComponent: () => import('./audit/audit-logs-page/audit-logs-page.component').then((module) => module.AuditLogsPageComponent) },
+      { path: 'audit-logs', title: 'Auditoría · TaxFlow', canActivate: [roleGuard], data: { roles: ['ADMIN', 'TAX_MANAGER'], allowReadOnly: true, section: 'Administración' }, loadComponent: () => import('./audit/audit-logs-page/audit-logs-page.component').then((module) => module.AuditLogsPageComponent) },
     ],
   },
   { path: '**', redirectTo: 'app' },

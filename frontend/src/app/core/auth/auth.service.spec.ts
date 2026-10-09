@@ -72,4 +72,41 @@ describe('AuthService', () => {
     expect(auth.token).toBeNull();
     expect(navigate).toHaveBeenCalledWith(['/login']);
   });
+
+  it('logs out locally when the backend answers 403', () => {
+    localStorage.setItem('taxflow.accessToken', 'jwt-token');
+    auth.logout();
+    http.expectOne(`${API_BASE_URL}/auth/logout`).flush({ message: 'Forbidden' }, { status: 403, statusText: 'Forbidden' });
+    expect(auth.token).toBeNull();
+    expect(navigate).toHaveBeenCalledWith(['/login']);
+  });
+
+  async function signIn(user: ReturnType<typeof aUser>): Promise<void> {
+    const login = firstValueFrom(auth.login({ email: user.email, password: 'secret' }));
+    http.expectOne(`${API_BASE_URL}/auth/login`).flush({ accessToken: 'jwt-token', tokenType: 'Bearer', user });
+    await login;
+  }
+
+  it('flags read-only demo accounts and never grants them write actions', async () => {
+    await signIn(aUser({ role: 'TAX_MANAGER', readOnly: true }));
+    expect(auth.isReadOnly).toBe(true);
+    expect(auth.hasRole('TAX_MANAGER')).toBe(true);
+    expect(auth.canWrite('ADMIN', 'TAX_MANAGER')).toBe(false);
+  });
+
+  it('keeps write actions for regular accounts', async () => {
+    await signIn(aUser({ role: 'TAX_MANAGER', readOnly: false }));
+    expect(auth.isReadOnly).toBe(false);
+    expect(auth.canWrite('ADMIN', 'TAX_MANAGER')).toBe(true);
+    expect(auth.canWrite('ADMIN')).toBe(false);
+  });
+
+  it('ends a read-only session locally without calling the logout endpoint', async () => {
+    await signIn(aUser({ role: 'ANALYST', readOnly: true }));
+    auth.logout();
+    http.expectNone(`${API_BASE_URL}/auth/logout`);
+    expect(auth.token).toBeNull();
+    expect(auth.currentUser).toBeNull();
+    expect(navigate).toHaveBeenCalledWith(['/login']);
+  });
 });

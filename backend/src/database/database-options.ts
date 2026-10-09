@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 import { entities } from './entities';
 import { migrations } from './migrations';
@@ -18,14 +19,43 @@ export function createDatabaseOptions(
     migrationsTableName: 'typeorm_migrations', synchronize: false, uuidExtension: 'pgcrypto',
     // Production images have no ts-node: the app applies pending migrations on startup when enabled.
     migrationsRun: isEnabled(environment.DATABASE_MIGRATIONS_RUN),
-
-
-    // Managed PostgreSQL uses TLS; certificate verification is disabled for the
-    // shared Supabase pooler because its CA is not available in the container trust store.
-    ssl: isEnabled(environment.DATABASE_SSL)
-      ? { rejectUnauthorized: false }
-      : false,
+    ssl: sslOptions(environment),
   };
+}
+
+/**
+ * TLS for managed PostgreSQL. The server certificate and host name are always verified: against the
+ * CA in DATABASE_SSL_CA / DATABASE_SSL_CA_FILE when set (providers with a private CA, such as Supabase),
+ * otherwise against the public CAs trusted by Node.js. There is deliberately no option to skip verification.
+ */
+function sslOptions(environment: NodeJS.ProcessEnv): PostgresConnectionOptions['ssl'] {
+  const ca = certificateAuthority(environment);
+  if (!isEnabled(environment.DATABASE_SSL)) {
+    if (ca) throw new Error('DATABASE_SSL_CA / DATABASE_SSL_CA_FILE require DATABASE_SSL=true.');
+    return false;
+  }
+  return ca ? { ca, rejectUnauthorized: true } : true;
+}
+
+function certificateAuthority(environment: NodeJS.ProcessEnv): string | undefined {
+  const inline = environment.DATABASE_SSL_CA?.trim();
+  const file = environment.DATABASE_SSL_CA_FILE?.trim();
+  if (inline && file) throw new Error('Set only one of DATABASE_SSL_CA and DATABASE_SSL_CA_FILE.');
+  let pem: string;
+  if (inline) {
+    // Single-line environment values may carry the PEM line breaks as a literal backslash-n.
+    pem = inline.replace(/\\n/g, '\n');
+  } else if (file) {
+    try {
+      pem = readFileSync(file, 'utf8');
+    } catch {
+      throw new Error('DATABASE_SSL_CA_FILE could not be read.');
+    }
+  } else {
+    return undefined;
+  }
+  if (!pem.includes('-----BEGIN CERTIFICATE-----')) throw new Error('The database CA must be a PEM certificate (-----BEGIN CERTIFICATE-----).');
+  return pem;
 }
 
 function isEnabled(value: string | undefined): boolean {

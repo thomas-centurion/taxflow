@@ -12,12 +12,13 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { BehaviorSubject, catchError, debounceTime, of, switchMap, tap } from 'rxjs';
+import { BehaviorSubject, Observable, catchError, debounceTime, map, of, switchMap, tap } from 'rxjs';
+import { AuthService } from '../../core/auth/auth.service';
 import { apiErrorMessage } from '../../core/errors/api-error-message';
 import { AuditLogsApiService } from '../../core/services/audit-logs-api.service';
 import { UsersApiService } from '../../core/services/users-api.service';
 import { AuditAction, AuditLog } from '../../shared/models/audit-log.model';
-import { User } from '../../shared/models/user.model';
+import { UserOption } from '../../shared/models/user.model';
 import { AUDIT_ACTION, AUDIT_ACTION_OPTIONS, AUDIT_ENTITY_OPTIONS, entityLabel } from '../../shared/presentation/labels';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 import { EmptyStateComponent, ErrorStateComponent, LoadingRowsComponent } from '../../shared/ui/states.component';
@@ -46,7 +47,7 @@ export class AuditLogsPageComponent {
   readonly filters = inject(FormBuilder).nonNullable.group({ action: '', entityType: '', actor: '', dateFrom: '', dateTo: '' });
 
   readonly rows = signal<AuditLog[]>([]);
-  readonly users = signal<User[]>([]);
+  readonly users = signal<UserOption[]>([]);
   readonly total = signal(0);
   readonly pageIndex = signal(0);
   readonly pageSize = signal(20);
@@ -57,7 +58,9 @@ export class AuditLogsPageComponent {
   private readonly trigger$ = new BehaviorSubject<void>(undefined);
 
   constructor() {
-    this.usersApi.list(1, 100).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({ next: (result) => this.users.set(result.data), error: () => undefined });
+    // Read-only demo accounts cannot list users (GET /users): the actor filter uses the active-user options instead.
+    const actors$: Observable<UserOption[]> = inject(AuthService).isReadOnly ? this.usersApi.options() : this.usersApi.list(1, 100).pipe(map((result) => result.data));
+    actors$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({ next: (users) => this.users.set(users), error: () => undefined });
 
     this.trigger$.pipe(
       tap(() => { this.loading.set(true); this.error.set(''); }),

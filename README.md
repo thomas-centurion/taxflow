@@ -237,6 +237,8 @@ TaxFlow currently defines three roles:
 
 The backend is the source of truth for authorization. Frontend controls are only a UX layer.
 
+Accounts listed in `DEMO_READ_ONLY_EMAILS` are additionally read-only: see [Demo Mode](#demo-mode-read-only).
+
 User administration rules:
 
 - `GET /api/users` and `GET /api/users/:id` are limited to `ADMIN` and `TAX_MANAGER`. Creating, updating and deleting users is `ADMIN` only.
@@ -390,6 +392,9 @@ LOGIN_THROTTLE_TTL_SECONDS=60
 
 # Optional: Swagger UI at /api/docs (on by default except with NODE_ENV=production)
 # SWAGGER_ENABLED=false
+
+# Optional: read-only demo accounts (comma-separated emails), see Demo Mode
+# DEMO_READ_ONLY_EMAILS=analyst@taxflow.local
 ```
 
 Do not commit `.env`.
@@ -917,6 +922,7 @@ The actor for human actions is taken from the authenticated backend context and 
 - `ADMIN`: full audit access
 - `TAX_MANAGER`: business-related audit access
 - `ANALYST`: no audit access
+- Read-only demo accounts ([Demo Mode](#demo-mode-read-only)): business-related audit access, read only, whatever their role
 
 The frontend provides:
 
@@ -1000,6 +1006,51 @@ docker compose exec -e NODE_ENV=development backend node dist/database/seed.js
 
 It uses `SEED_USER_PASSWORD` from `.env` for the three seed users (see [Development Credentials](#development-credentials)) and only inserts missing records. Never do this on an installation with real users.
 
+## Demo Mode (read-only)
+
+A public, interactive demo can share one account whose credentials anyone may use, without letting visitors change data. Demo mode is configuration only: no extra role, no migration.
+
+### How it works
+
+- `DEMO_READ_ONLY_EMAILS` lists the emails of existing accounts that are read-only (comma-separated, case and spaces ignored). Unset or empty disables the mode.
+- The API flags those users as `readOnly` on every authenticated request and in `POST /api/auth/login` / `GET /api/auth/me`.
+- A global guard, registered between JWT authentication and role checks, answers `403 This demo account is read-only.` to every `POST`, `PUT`, `PATCH` and `DELETE` from a read-only account, before validation, uploads or controllers run. It covers every route, including future ones without `@Roles`. Public routes such as `POST /api/auth/login` are unaffected.
+- Audit logs (`GET /api/audit-logs`) are opened to read-only accounts with the business scope of a `TAX_MANAGER`: login events and user administration stay hidden.
+- The web app reads the flag to hide every write action (create, edit, delete, uploads, automation runs, mark-as-read), shows a "Demo · solo lectura" badge, opens notifications without marking them as read and ends the session locally on logout. Hiding controls is only UX: the API enforces the restriction.
+
+### What a demo visitor can and cannot do
+
+| Can | Cannot |
+|---|---|
+| Sign in and out | Create, edit or delete companies, obligations, countries or users |
+| Use the dashboard | Upload or delete documents |
+| Browse and filter tax obligations and companies | Run automations or the deadline check |
+| List and download documents | Mark notifications as read |
+| See automation run history | Change any data through the API directly |
+| Read their notifications and the business audit log | |
+
+Two events are audited by design and still occur: the login (and failed logins) and document downloads. Logout writes nothing for a read-only account (JWTs are stateless; the browser discards the token).
+
+### Local setup
+
+1. Add the account to `.env` (the seed `ANALYST` is the intended demo account):
+
+   ```env
+   DEMO_READ_ONLY_EMAILS=analyst@taxflow.local
+   ```
+
+2. Restart the backend and sign in with that account: the badge appears and write actions are gone. `ADMIN` and `TAX_MANAGER` accounts keep working normally.
+
+`npm --prefix backend run test:e2e` covers the mode end to end against the isolated test database.
+
+### Security warnings
+
+- **Use a dedicated `ANALYST` account.** The flag blocks writes for any role, but an `ANALYST` also limits what can be read (for example, it cannot list users).
+- **Rotate every other password before publishing demo credentials.** The seed gives all three seed users the same `SEED_USER_PASSWORD`. Anyone who knows the demo password can therefore sign in as `admin@taxflow.local` or `manager@taxflow.local` until their passwords are changed. Change them from the web app as `ADMIN` (Usuarios → Editar → new password; an empty password keeps the current one) and then sign in with each account to confirm. Do this by hand on the deployed instance; never run the seed against production.
+- **Set the variable on the deployed API**, not only locally, and confirm with `GET /api/auth/me` (signed in as the demo account) that `readOnly` is `true` before sharing the credentials.
+- **Share only the demo account.** Do not publish credentials in the repository, commits or logs. This README has no "Live Demo" credentials section on purpose: add one only once the points above are done.
+- The demo account can see business data in full (companies, obligations, documents and the names and emails of the users involved), so a public demo must contain fictitious data only.
+
 ## Production configuration
 
 | Variable | Production value | Purpose |
@@ -1008,13 +1059,28 @@ It uses `SEED_USER_PASSWORD` from `.env` for the three seed users (see [Developm
 | `JWT_SECRET` | Unique random value, at least 32 bytes (`openssl rand -hex 32`) | Signs access tokens; the API refuses to start without it |
 | `DATABASE_*` | Real credentials | `DATABASE_HOST` is `postgres` inside Compose |
 | `DATABASE_MIGRATIONS_RUN` | `true` | Applies pending migrations on startup (the image has no ts-node) |
-| `DATABASE_SSL` | `true` for managed PostgreSQL | TLS with certificate verification |
+| `DATABASE_SSL` | `true` for managed PostgreSQL | TLS; the server certificate and host name are always verified |
+| `DATABASE_SSL_CA_FILE` or `DATABASE_SSL_CA` | Provider CA, only when it is private (e.g. Supabase) | CA used to verify the database certificate, see [Managed PostgreSQL over TLS](#managed-postgresql-over-tls) |
 | `TRUST_PROXY` | Number of proxies in front of the API (`1` in Compose) | Lets the login rate limit see the client IP instead of the proxy's |
 | `FRONTEND_ORIGIN` / `APP_ORIGIN` | Public URL of the web app | CORS origin for direct API clients |
 | `STORAGE_LOCAL_PATH` | `./storage` (a Docker volume) | Document storage |
 | `SWAGGER_ENABLED` | Unset | Swagger stays off in production unless set to `true` |
+| `DEMO_READ_ONLY_EMAILS` | Unset, or the public demo account | Read-only demo accounts, see [Demo Mode](#demo-mode-read-only) |
 
 The Compose stack sets `NODE_ENV`, `DATABASE_HOST`, `DATABASE_MIGRATIONS_RUN`, `TRUST_PROXY` and the storage path itself and takes the secrets from `.env`. Secrets never live in the images or the repository.
+
+## Managed PostgreSQL over TLS
+
+With `DATABASE_SSL=true` the API connects over TLS and verifies the server certificate chain and host name. There is deliberately no setting to skip verification.
+
+- **Provider certificate signed by a public CA:** `DATABASE_SSL=true` is enough; Node.js's trusted CAs are used.
+- **Provider with its own CA (Supabase, including the Session Pooler):** its certificate is not in the public trust store, so `DATABASE_SSL=true` alone fails verification (typically `self-signed certificate in certificate chain`). Download the CA from the Supabase dashboard (Project Settings → Database → SSL Configuration) and give it to the API with either:
+  - `DATABASE_SSL_CA_FILE`: path to the PEM file, for example a Render *Secret File* (mounted under `/etc/secrets/`), or
+  - `DATABASE_SSL_CA`: the PEM content itself; line breaks may be written as `\n` on platforms with single-line variables.
+
+A CA certificate is public information, not a secret, but keep it out of the repository so the provider can rotate it without a code change. The API refuses to start if the CA is unreadable, is not a PEM certificate, both variables are set, or a CA is given without `DATABASE_SSL=true`.
+
+Before switching a running deployment to verified TLS, configure the CA first: otherwise the API cannot connect to the database once the new version is deployed.
 
 ## Health checks
 
@@ -1059,13 +1125,13 @@ The E2E runner (`backend/test/run-e2e.cjs`) never uses the development database 
 
 PostgreSQL must be running (`docker compose up -d postgres`). The development backend can keep running on `3002`. E2E files refuse to run without the runner-provided `TAXFLOW_API_URL`.
 
-The backend suite covers authentication (including forged, unsigned, expired and tampered JWTs, and the immediate revocation of a deactivated user's tokens), login rate limiting, authorization, CRUD operations, relation integrity, status transitions and overdue rules, last-admin protection, documents, notifications, deadline automation, automation runs (lifecycle, idempotency, concurrency, restart recovery, scheduler and API), audit logging, seed safety and the OpenAPI contract.
+The backend suite covers authentication (including forged, unsigned, expired and tampered JWTs, and the immediate revocation of a deactivated user's tokens), login rate limiting, authorization, CRUD operations, relation integrity, status transitions and overdue rules, last-admin protection, documents, notifications, deadline automation, automation runs (lifecycle, idempotency, concurrency, restart recovery, scheduler and API), audit logging, the read-only demo mode, seed safety and the OpenAPI contract.
 
 ### Frontend
 
 Frontend tests use the Angular CLI unit-test builder (`@angular/build:unit-test`, experimental in Angular 20) with Vitest and jsdom: no browser is needed. Spec files live next to the code (`*.spec.ts`) and shared fixtures in `frontend/src/testing/`.
 
-They focus on logic that can break: session handling (`AuthService`), the HTTP interceptor, route guards, API error translation, API services, dashboard metrics, calendar-date helpers, the paginated list state, audit log formatting, the due-date component, the obligation form and the automation panel. Purely presentational templates are not tested one by one.
+They focus on logic that can break: session handling (`AuthService`), the HTTP interceptor, route guards, API error translation, API services, dashboard metrics, calendar-date helpers, the paginated list state, audit log formatting, the due-date component, the obligation form, the automation panel and the read-only notifications behaviour. Purely presentational templates are not tested one by one.
 
 ### Builds
 

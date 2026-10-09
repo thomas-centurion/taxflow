@@ -45,4 +45,14 @@ describe('route guards', () => {
     session.currentUser = null;
     expect(url(await run(roleGuard, { roles: ['ADMIN'] }))).toBe('/app');
   });
+
+  it('roleGuard admits read-only demo accounts only on routes opened to them', async () => {
+    const auditRoute = { roles: ['ADMIN', 'TAX_MANAGER'], allowReadOnly: true };
+    session.currentUser = aUser({ role: 'ANALYST', readOnly: true });
+    expect(await run(roleGuard, auditRoute)).toBe(true);
+    expect(url(await run(roleGuard, { roles: ['ADMIN'] }))).toBe('/app');
+
+    session.currentUser = aUser({ role: 'ANALYST', readOnly: false });
+    expect(url(await run(roleGuard, auditRoute))).toBe('/app');
+  });
 });

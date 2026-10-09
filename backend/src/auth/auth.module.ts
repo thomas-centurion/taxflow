@@ -10,6 +10,8 @@ import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { JwtStrategy } from './jwt.strategy';
 import { RolesGuard } from './roles.guard';
+import { DemoReadOnlyGuard } from './demo-read-only.guard';
+import { ReadOnlyAccounts } from './read-only-accounts';
 import { AuditModule } from '../audit/audit.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { LoginThrottlerGuard } from './login-throttler.guard';
@@ -43,8 +45,10 @@ function positiveInteger(config: ConfigService, key: string, fallback: number): 
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, JwtAuthGuard, RolesGuard, LoginThrottlerGuard,
+  providers: [AuthService, JwtStrategy, JwtAuthGuard, RolesGuard, LoginThrottlerGuard, ReadOnlyAccounts, DemoReadOnlyGuard,
+    // Order matters: authenticate, then block writes of read-only demo accounts, then check roles.
     { provide: APP_GUARD, useExisting: JwtAuthGuard },
+    { provide: APP_GUARD, useExisting: DemoReadOnlyGuard },
     { provide: APP_GUARD, useExisting: RolesGuard },
   ],
 })
