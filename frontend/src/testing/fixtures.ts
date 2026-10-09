@@ -4,7 +4,6 @@ import { Country } from '../app/shared/models/country.model';
 import { TaxObligation } from '../app/shared/models/tax-obligation.model';
 import { User } from '../app/shared/models/user.model';
 
-/** Minimal, valid API objects for specs. Override only what a test cares about. */
 export const argentina: Country = { id: 'country-ar', name: 'Argentina', code: 'AR', createdAt: '2026-01-01T00:00:00.000Z' };
 
 export function aUser(overrides: Partial<User> = {}): User {

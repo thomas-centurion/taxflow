@@ -4,7 +4,6 @@ const crypto = require('node:crypto');
 const path = require('node:path');
 require('dotenv').config({ path: path.resolve(__dirname, '../../.env'), quiet: true });
 
-// Set by test/run-e2e.cjs, which runs an isolated backend against the taxflow_test database.
 const baseUrl = process.env.TAXFLOW_API_URL;
 if (!baseUrl) throw new Error('TAXFLOW_API_URL is not set: run E2E tests with "npm run test:e2e".');
 const password = process.env.SEED_USER_PASSWORD;
@@ -73,7 +72,6 @@ test('manual processing marks an overdue obligation, audits, notifies and is ide
   assert.equal(run.result.notificationsCreated, 1);
   assert.equal((await api('GET', `/tax-obligations/${obligation.id}`, manager.accessToken)).data.status, 'OVERDUE');
 
-  // Audit: the run is attributed to the requester; the status change to the system rule, linked to the run.
   const runEvents = (await api('GET', `/audit-logs?entityType=AutomationRun&entityId=${run.id}`, manager.accessToken)).data.data;
   assert.deepEqual(runEvents.map((event) => event.action).sort(), ['AUTOMATION_STARTED', 'AUTOMATION_SUCCEEDED']);
   assert.ok(runEvents.every((event) => event.actorEmail === 'manager@taxflow.local'), 'tax managers can see automation audit events');
@@ -83,14 +81,12 @@ test('manual processing marks an overdue obligation, audits, notifies and is ide
   assert.equal(statusEvents[0].metadata.automationRunId, run.id);
   assert.deepEqual(statusEvents[0].metadata.changes.status, { before: 'PENDING', after: 'OVERDUE' });
 
-  // Notifications: the overdue alert goes to the responsible user, the confirmation to the requester.
   const analystAlerts = forObligation((await api('GET', '/notifications?limit=100', analyst.accessToken)).data.data, obligation.id);
   assert.deepEqual(analystAlerts.map((item) => [item.type, item.title]), [['DEADLINE', 'Obligación vencida']]);
   const managerNotices = forObligation((await api('GET', '/notifications?limit=100', manager.accessToken)).data.data, obligation.id);
   assert.deepEqual(managerNotices.map((item) => [item.type, item.title]), [['AUTOMATION', 'Procesamiento completado']]);
   assert.match(managerNotices[0].message, /se marcó como vencida/);
 
-  // Idempotency: running again records a new run but changes nothing and duplicates nothing.
   const second = await api('POST', route, manager.accessToken);
   assert.equal(second.status, 201);
   assert.equal(second.data.status, 'SUCCEEDED');
@@ -99,7 +95,6 @@ test('manual processing marks an overdue obligation, audits, notifies and is ide
   assert.equal(forObligation((await api('GET', '/notifications?limit=100', analyst.accessToken)).data.data, obligation.id).length, 1);
   assert.equal((await api('GET', `/audit-logs?entityType=TaxObligation&entityId=${obligation.id}&action=UPDATE`, admin.accessToken)).data.meta.total, 1);
 
-  // History, newest first, readable by every authenticated role.
   const history = await api('GET', route, analyst.accessToken);
   assert.equal(history.status, 200);
   assert.deepEqual(history.data.map((item) => item.id), [second.data.id, run.id]);
@@ -107,7 +102,6 @@ test('manual processing marks an overdue obligation, audits, notifies and is ide
   assert.equal(detail.status, 200);
   assert.equal(detail.data.result.overdueMarked, true);
 
-  // Obligations that no longer need follow-up are rejected without recording a run.
   assert.equal((await api('PATCH', `/tax-obligations/${obligation.id}`, manager.accessToken, { status: 'SUBMITTED' })).status, 200);
   const closed = await api('POST', route, manager.accessToken);
   assert.equal(closed.status, 409);

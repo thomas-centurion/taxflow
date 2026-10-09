@@ -22,7 +22,6 @@ export class CreateAutomationRuns20261008000000 implements MigrationInterface {
       CONSTRAINT "FK_automation_runs_tax_obligation" FOREIGN KEY ("tax_obligation_id") REFERENCES "tax_obligations"("id") ON DELETE CASCADE,
       CONSTRAINT "FK_automation_runs_requested_by" FOREIGN KEY ("requested_by_id") REFERENCES "users"("id") ON DELETE SET NULL)`);
     await queryRunner.query(`CREATE INDEX "IDX_automation_runs_obligation_created" ON "automation_runs" ("tax_obligation_id", "created_at")`);
-    // At most one queued or running execution per obligation, enforced by the database.
     await queryRunner.query(`CREATE UNIQUE INDEX "UQ_automation_runs_active_obligation" ON "automation_runs" ("tax_obligation_id") WHERE "status" IN ('PENDING', 'RUNNING')`);
   }
 

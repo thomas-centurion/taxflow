@@ -14,7 +14,6 @@ const DEFAULT_ERROR_DESCRIPTIONS: Record<number, string> = {
 
 type ErrorResponse = number | [status: number, description: string];
 
-/** Documents error responses with the shared error body. Pass `[status, description]` to be specific. */
 export function ApiErrorResponses(...responses: ErrorResponse[]): MethodDecorator & ClassDecorator {
   return applyDecorators(...responses.map((response) => {
     const [status, description] = Array.isArray(response) ? response : [response, DEFAULT_ERROR_DESCRIPTIONS[response]];
@@ -22,7 +21,6 @@ export function ApiErrorResponses(...responses: ErrorResponse[]): MethodDecorato
   }));
 }
 
-/** Marks routes that require `Authorization: Bearer <token>` (every route except the @Public ones). */
 export function ApiJwtAuth(): MethodDecorator & ClassDecorator {
   return applyDecorators(ApiBearerAuth(), ApiErrorResponses(401));
 }

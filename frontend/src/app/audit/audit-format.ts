@@ -10,7 +10,6 @@ type Change = { before?: unknown; after?: unknown };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** Readable value for a metadata field (enum labels, booleans, dates, sizes, short IDs). */
 export function auditValue(field: string, value: unknown): string {
   if (value === null || value === undefined || value === '') return '—';
   if (typeof value === 'boolean') return value ? 'Sí' : 'No';
@@ -44,7 +43,6 @@ export function auditChanges(log: AuditLog): AuditChange[] {
   }));
 }
 
-/** Remaining metadata (created/deleted values or event details) as label/value pairs. */
 export function auditDetails(log: AuditLog): { label: string; value: string }[] {
   const metadata = log.metadata ?? {};
   const source = (metadata['values'] && typeof metadata['values'] === 'object')
@@ -55,7 +53,6 @@ export function auditDetails(log: AuditLog): { label: string; value: string }[] 
     .map(([key, value]) => ({ label: fieldLabel(key), value: auditValue(key, value) }));
 }
 
-/** One-line description for the table. */
 export function auditSummary(log: AuditLog): string {
   const changes = auditChanges(log);
   if (changes.length) {

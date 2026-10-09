@@ -2,7 +2,6 @@ import { ApiProperty } from '@nestjs/swagger';
 import { PersonSummaryDto } from '../../common/swagger/person-summary.dto';
 import { DocumentResponse } from '../documents.service';
 
-/** Document metadata. The storage path is internal and never returned. */
 export class DocumentResponseDto implements DocumentResponse {
   @ApiProperty({ format: 'uuid' }) id!: string;
   @ApiProperty({ example: 'declaracion-iva-octubre.pdf', description: 'Sanitized original file name.' }) originalFilename!: string;

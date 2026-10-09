@@ -51,7 +51,6 @@ describe('AuthService', () => {
     expect(await session).toBe(true);
     expect(auth.currentUser?.email).toBe('manager@taxflow.local');
 
-    // The user is cached: a second check does not hit the API again.
     expect(await firstValueFrom(auth.checkSession())).toBe(true);
     http.expectNone(`${API_BASE_URL}/auth/me`);
   });

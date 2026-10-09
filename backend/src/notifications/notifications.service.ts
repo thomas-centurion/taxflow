@@ -92,7 +92,6 @@ export class NotificationsService {
     }, manager);
   }
 
-  /** Tells each recipient (deduplicated) how an automation run ended. One notification per run and user. */
   async notifyAutomationResult(input: { runId: string; taxObligationId: string; userIds: (string | null | undefined)[]; title: string; message: string }): Promise<void> {
     const recipients = [...new Set(input.userIds.filter((id): id is string => !!id))];
     for (const userId of recipients) {
@@ -142,6 +141,7 @@ export class NotificationsService {
 
   private async insertOnce(input: { userId: string; title: string; message: string; type: NotificationType; taxObligationId: string; dedupeKey: string }, manager: EntityManager): Promise<boolean> {
     const repository = manager.getRepository(Notification);
+    // la clave de deduplicación hace que repetir un aviso no lo duplique
     const result = await repository.createQueryBuilder().insert().into(Notification).values({ ...input, isRead: false }).orIgnore().execute();
     const id = result.identifiers[0]?.id as string | undefined;
     if (!id) return false;

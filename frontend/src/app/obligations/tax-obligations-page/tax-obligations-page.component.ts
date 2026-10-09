@@ -82,8 +82,6 @@ export class TaxObligationsPageComponent {
   constructor() {
     this.loadFilterOptions();
 
-    // The URL is the single source of truth for filters and pagination, so dashboard links,
-    // reloads and the back button all restore the same view.
     combineLatest([this.route.queryParamMap, this.reload$]).pipe(
       map(([params]) => this.readQuery(params)),
       tap((query) => {

@@ -10,12 +10,6 @@ import { TaxObligationStatus } from '../tax-obligations/tax-obligation-status.en
 import { TaxObligationType } from '../tax-obligations/tax-obligation-type.enum';
 import { todayKey } from '../tax-obligations/tax-obligation-rules';
 
-/*
- * Development seed. It only inserts records that do not exist yet: existing countries, users (passwords,
- * roles, active flags), companies and obligations (status, due dates) are never modified, so it is safe
- * to run repeatedly. It refuses to run with NODE_ENV=production.
- */
-
 const countries = [
   { name: 'Argentina', code: 'AR' },
   { name: 'Brazil', code: 'BR' },
@@ -36,7 +30,6 @@ const companySeeds = [
   { name: 'Northstar US', taxId: 'US-TAX-0004', countryCode: 'US', email: 'tax@northstar-us.example', phone: '+1 212 555 0104' },
 ];
 
-/** Due dates are calendar days in the backend process timezone, the same reference used by the overdue rule. */
 function dateOffsetFromToday(offsetDays: number): string {
   const now = new Date();
   return todayKey(new Date(now.getFullYear(), now.getMonth(), now.getDate() + offsetDays));
@@ -86,7 +79,6 @@ async function seedDatabase(): Promise<void> {
       const country = countryByCode.get(countryCode);
       const company = country && companyByKey.get(`${country.id}:${taxId}`);
       if (!country || !company) throw new Error(`Seed company for ${obligation.name} was not found.`);
-      // Seed obligations are identified without the due date, which is relative to the day the seed runs.
       if (await obligationRepository.existsBy({ companyId: company.id, name: obligation.name, type: obligation.type })) continue;
       await obligationRepository.insert({ ...obligation, companyId: company.id, countryId: country.id });
     }

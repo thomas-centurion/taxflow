@@ -58,7 +58,6 @@ export class AuditLogsPageComponent {
   private readonly trigger$ = new BehaviorSubject<void>(undefined);
 
   constructor() {
-    // Read-only demo accounts cannot list users (GET /users): the actor filter uses the active-user options instead.
     const actors$: Observable<UserOption[]> = inject(AuthService).isReadOnly ? this.usersApi.options() : this.usersApi.list(1, 100).pipe(map((result) => result.data));
     actors$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({ next: (users) => this.users.set(users), error: () => undefined });
 
@@ -86,7 +85,6 @@ export class AuditLogsPageComponent {
 
     this.filters.valueChanges.pipe(debounceTime(250), takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
       this.activeFilters.set(Object.values(value).filter(Boolean).length);
-      // Inverted ranges are rejected by the API; explain it here instead of sending the request.
       const inverted = !!value.dateFrom && !!value.dateTo && value.dateFrom > value.dateTo;
       this.rangeError.set(inverted);
       if (inverted) return;

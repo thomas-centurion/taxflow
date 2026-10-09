@@ -97,7 +97,7 @@ export class TaxObligationsService {
       const changes = diffFields(current, input, OBLIGATION_FIELDS);
       if (!Object.keys(changes).length) return current;
       if (changes.status || changes.dueDate) this.assertStatusChange(current.status, input.status ?? current.status, input.dueDate ?? current.dueDate);
-      // Loaded relation objects take precedence over FK columns in TypeORM, so they must not be part of the save.
+      // typeorm prioriza las relaciones cargadas sobre las fk, por eso no se guardan
       const { company: _company, country: _country, responsibleUser: _responsibleUser, ...columns } = current;
       const saved = await repository.save({ ...columns, ...input, responsibleUserId });
       await this.audit.record({ actor, action: AuditAction.UPDATE, entity: 'TaxObligation', entityId: id, metadata: { changes } }, manager);

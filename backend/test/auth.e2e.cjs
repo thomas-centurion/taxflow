@@ -4,7 +4,6 @@ const crypto = require('node:crypto');
 const path = require('node:path');
 require('dotenv').config({ path: path.resolve(__dirname, '../../.env'), quiet: true });
 
-// Set by test/run-e2e.cjs, which runs an isolated backend against the taxflow_test database.
 const baseUrl = process.env.TAXFLOW_API_URL;
 if (!baseUrl) throw new Error('TAXFLOW_API_URL is not set: run E2E tests with "npm run test:e2e".');
 const password = process.env.SEED_USER_PASSWORD;
@@ -20,7 +19,6 @@ async function api(method, route, token, body) {
 
 const base64url = (value) => Buffer.from(typeof value === 'string' ? value : JSON.stringify(value)).toString('base64url');
 
-/** Builds an HS256 JWT the way the backend does, so tests can forge, expire or tamper tokens. */
 function signJwt(payload, secret, header = { alg: 'HS256', typ: 'JWT' }) {
   const unsigned = `${base64url(header)}.${base64url(payload)}`;
   const signature = header.alg === 'none' ? '' : crypto.createHmac('sha256', secret).update(unsigned).digest('base64url');
@@ -41,7 +39,6 @@ test('protected routes reject missing, malformed, forged, unsigned and expired t
   assert.equal((await api('GET', '/auth/me', signJwt({ ...claims, exp: now + 3600 }, '', { alg: 'none', typ: 'JWT' }))).status, 401, 'unsigned token');
   assert.equal((await api('GET', '/auth/me', signJwt({ ...claims, iat: now - 7200, exp: now - 3600 }, process.env.JWT_SECRET))).status, 401, 'expired token');
 
-  // A validly signed token whose payload was altered after signing (role escalation attempt).
   const [header, , signature] = login.data.accessToken.split('.');
   const tampered = `${header}.${base64url({ ...claims, role: 'ADMIN', sub: crypto.randomUUID(), exp: now + 3600 })}.${signature}`;
   assert.equal((await api('GET', '/auth/me', tampered)).status, 401, 'tampered payload');

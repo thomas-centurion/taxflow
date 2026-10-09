@@ -16,7 +16,6 @@ import { saveFromDialog } from '../../shared/ui/dialog-save';
 
 export interface UserFormDialogData {
   record?: User;
-  /** True when the record is the signed-in user (they cannot deactivate themselves from here by accident). */
   isSelf: boolean;
   save: (input: UserInput) => Observable<User>;
 }
@@ -43,7 +42,6 @@ export class UserFormDialogComponent {
     firstName: [this.data.record?.firstName ?? '', [Validators.required, Validators.maxLength(80)]],
     lastName: [this.data.record?.lastName ?? '', [Validators.required, Validators.maxLength(80)]],
     email: [this.data.record?.email ?? '', [Validators.required, Validators.email, Validators.maxLength(254)]],
-    // A password is required for new users; when editing, an empty value keeps the current one.
     password: ['', this.isEdit ? [Validators.minLength(8), Validators.maxLength(72)] : [Validators.required, Validators.minLength(8), Validators.maxLength(72)]],
     role: [this.data.record?.role ?? ('ANALYST' as UserRole), Validators.required],
     isActive: [this.data.record?.isActive ?? true],

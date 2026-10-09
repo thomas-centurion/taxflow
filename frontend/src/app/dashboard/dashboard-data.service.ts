@@ -20,6 +20,7 @@ export class DashboardDataService {
     });
   }
 
+  // trae la primera página y después el resto en paralelo
   private loadAll<T>(fetchPage: (page: number) => Observable<PaginatedResponse<T>>): Observable<T[]> {
     return fetchPage(1).pipe(
       switchMap((firstPage) => {

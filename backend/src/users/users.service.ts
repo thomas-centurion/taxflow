@@ -29,7 +29,6 @@ export class UsersService {
     return { data, meta: paginationMeta(query.page, query.limit, total) };
   }
 
-  /** Minimal directory of active users for responsible pickers/filters; exposes no role or account state. */
   async findOptions(): Promise<UserOption[]> {
     const users = await this.users.find({ where: { isActive: true }, order: { firstName: 'ASC', lastName: 'ASC' } });
     return users.map(({ id, firstName, lastName, email }) => ({ id, firstName, lastName, email }));
@@ -87,10 +86,6 @@ export class UsersService {
     catch (error) { return rethrowDatabaseError(error, 'User cannot be deleted because it has associated records.'); }
   }
 
-  /**
-   * Rejects a change (role/isActive update, or deletion when `next` is null) that would leave no active ADMIN.
-   * Active ADMIN rows are locked so concurrent demotions/deactivations are serialized.
-   */
   private async assertActiveAdminRemains(manager: EntityManager, target: User, next: { role: UserRole; isActive: boolean } | null): Promise<void> {
     const wasActiveAdmin = target.role === UserRole.ADMIN && target.isActive;
     const staysActiveAdmin = next !== null && next.role === UserRole.ADMIN && next.isActive;
@@ -99,6 +94,7 @@ export class UsersService {
       .setLock('pessimistic_write')
       .where('user.role = :role AND user.isActive = :isActive', { role: UserRole.ADMIN, isActive: true })
       .getMany();
+    // siempre tiene que quedar al menos un admin activo
     if (!activeAdmins.some((admin) => admin.id !== target.id)) throw new ConflictException('The system must keep at least one active ADMIN.');
   }
 }

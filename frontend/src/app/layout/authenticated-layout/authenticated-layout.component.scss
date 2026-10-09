@@ -16,7 +16,6 @@
   &:focus { top: 8px; }
 }
 
-// Sidebar: light, compact and quiet, so the content keeps the visual weight.
 .sidebar {
   width: 224px;
   border-right: 1px solid var(--tf-line);
@@ -94,7 +93,6 @@
   text-align: center;
 }
 
-// Top bar
 .content { display: flex; flex-direction: column; }
 
 .topbar {
@@ -163,7 +161,6 @@
   .tf-badge { align-self: flex-start; margin-top: 6px; }
 }
 
-// Notifications menu
 .menu-head {
   display: flex;
   align-items: center;
@@ -199,7 +196,6 @@
 .menu-note { margin: 0; padding: 16px; font-size: var(--tf-text-sm); color: var(--tf-ink-500); &.error { color: var(--tf-danger); } }
 .menu-footer { font-size: var(--tf-text-sm); color: var(--tf-primary) !important; }
 
-// Page
 .page {
   width: 100%;
   max-width: 1440px;

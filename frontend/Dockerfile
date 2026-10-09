@@ -1,4 +1,3 @@
-# Production image: Angular production build served by an unprivileged nginx.
 FROM node:22-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./

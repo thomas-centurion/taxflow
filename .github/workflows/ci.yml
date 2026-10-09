@@ -9,7 +9,6 @@ on:
 permissions:
   contents: read
 
-# A new push to the same branch or pull request cancels the run that is still in progress.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -23,7 +22,6 @@ jobs:
       run:
         working-directory: backend
     services:
-      # Disposable PostgreSQL for this job only. The E2E runner creates and recreates taxflow_test in it.
       postgres:
         image: postgres:16-alpine
         env:

@@ -3,7 +3,6 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 export const SWAGGER_PATH = 'api/docs';
 
-/** On by default except when NODE_ENV=production. SWAGGER_ENABLED=true|false overrides it in any environment. */
 export function isSwaggerEnabled(environment: { SWAGGER_ENABLED?: string; NODE_ENV?: string }): boolean {
   const flag = environment.SWAGGER_ENABLED?.trim().toLowerCase();
   if (flag === 'true') return true;
@@ -11,7 +10,6 @@ export function isSwaggerEnabled(environment: { SWAGGER_ENABLED?: string; NODE_E
   return environment.NODE_ENV !== 'production';
 }
 
-/** Serves Swagger UI at /api/docs and the OpenAPI JSON at /api/docs-json. */
 export function setupSwagger(app: INestApplication): void {
   const config = new DocumentBuilder()
     .setTitle('TaxFlow API')

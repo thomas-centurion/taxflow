@@ -25,7 +25,6 @@ export class HealthController {
     try {
       await this.dataSource.query('SELECT 1');
     } catch {
-      // The driver error can include host names: it is not exposed to anonymous callers.
       throw new ServiceUnavailableException('Database is not reachable.');
     }
     return { status: 'ok', database: 'up' };

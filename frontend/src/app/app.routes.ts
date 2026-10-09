@@ -2,7 +2,6 @@ import { Routes } from '@angular/router';
 import { AuthenticatedLayoutComponent } from './layout/authenticated-layout/authenticated-layout.component';
 import { authGuard, loginGuard, roleGuard } from './core/guards/auth.guard';
 
-// `title` sets the browser tab title; `data.section` is shown in the top bar.
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'app' },
   { path: 'login', title: 'Iniciar sesión · TaxFlow', canActivate: [loginGuard], loadComponent: () => import('./auth/login/login.component').then((module) => module.LoginComponent) },

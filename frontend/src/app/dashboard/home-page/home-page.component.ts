@@ -31,7 +31,6 @@ export class HomePageComponent {
   readonly typeLabel = typeLabel;
 
   private readonly refresh$ = new BehaviorSubject<void>(undefined);
-  /** Previous figures stay visible while refreshing, so the page never flashes empty. */
   readonly state$ = this.refresh$.pipe(
     switchMap(() => this.dataService.load().pipe(
       map((raw): DashboardState => ({ loading: false, error: false, metrics: buildDashboardMetrics(raw.companies, raw.obligations) })),
@@ -43,7 +42,6 @@ export class HomePageComponent {
 
   refresh(): void { this.refresh$.next(); }
 
-  /** Brings the overdue panel into view and moves focus there (the page scrolls inside the layout, not the window). */
   focusOverdue(): void {
     const panel = document.getElementById('overdue-panel');
     panel?.scrollIntoView({ behavior: 'smooth', block: 'start' });

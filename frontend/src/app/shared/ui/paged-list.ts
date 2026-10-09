@@ -7,10 +7,6 @@ import { PaginatedResponse } from '../models/api-response.model';
 
 export interface PageQuery { page: number; limit: number; search: string }
 
-/**
- * State for a searchable, paginated list backed by the API. Every reload cancels the previous
- * request (switchMap), so fast typing or paging never shows out-of-order results.
- */
 export class PagedList<T> {
   readonly rows = signal<T[]>([]);
   readonly total = signal(0);
@@ -25,6 +21,7 @@ export class PagedList<T> {
   constructor(load: (query: PageQuery) => Observable<PaginatedResponse<T>>, errorMessage: string, destroyRef: DestroyRef) {
     this.trigger$.pipe(
       tap(() => { this.loading.set(true); this.error.set(''); }),
+      // switchmap cancela el request anterior para no mostrar resultados desordenados
       switchMap(() => load({ page: this.pageIndex() + 1, limit: this.pageSize(), search: this.search() }).pipe(
         catchError((error: unknown) => { this.error.set(apiErrorMessage(error, errorMessage)); return of(null); }),
       )),

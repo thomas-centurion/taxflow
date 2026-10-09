@@ -1,6 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-/** Error body produced by NestJS for every failed request (the API keeps the framework's default format). */
 export class ErrorResponseDto {
   @ApiProperty({ example: 404 }) statusCode!: number;
 

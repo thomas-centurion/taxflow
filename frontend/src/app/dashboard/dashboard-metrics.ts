@@ -21,10 +21,6 @@ export interface DashboardMetrics {
 const OPEN_STATUSES: TaxObligationStatus[] = ['PENDING', 'IN_PROGRESS'];
 const byDueDate = (a: TaxObligation, b: TaxObligation) => a.dueDate.localeCompare(b.dueDate);
 
-/**
- * Derives the dashboard figures from the obligations returned by the API.
- * "Overdue" is the backend's `isOverdue` flag; the frontend never redefines that rule.
- */
 export function buildDashboardMetrics(companies: Company[], obligations: TaxObligation[], today = todayKey()): DashboardMetrics {
   const inSevenDays = addDays(today, 7);
   const inThirtyDays = addDays(today, 30);

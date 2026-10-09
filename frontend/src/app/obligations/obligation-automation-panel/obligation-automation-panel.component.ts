@@ -14,13 +14,8 @@ import { TaxObligation, TaxObligationStatus } from '../../shared/models/tax-obli
 import { personName } from '../../shared/presentation/format';
 import { AUTOMATION_ERROR_LABELS, AUTOMATION_RUN_STATUS, AUTOMATION_TRIGGER_LABELS, statusLabel } from '../../shared/presentation/labels';
 
-/** Mirrors the backend rule to explain upfront why the action is unavailable; the API remains authoritative. */
 const PROCESSABLE: TaxObligationStatus[] = ['PENDING', 'IN_PROGRESS', 'OVERDUE'];
 
-/**
- * Automated deadline processing of one obligation: run it now and review previous runs (manual and
- * scheduled). Emits `changed` when a run modified the obligation so the page can refresh it.
- */
 @Component({
   selector: 'app-obligation-automation-panel',
   imports: [DatePipe, MatButtonModule, MatIconModule, MatProgressBarModule, MatTooltipModule],
@@ -83,7 +78,6 @@ export class ObligationAutomationPanelComponent {
     });
   }
 
-  /** One-line outcome of a successful run. */
   summary(run: AutomationRun): string {
     const result = run.result;
     if (!result) return '—';

@@ -1,0 +1,28 @@
+ .env.example                                       |    4 [32m+[m[31m-[m
+ README.md                                          | 1336 [32m++[m[31m------------------[m
+ docker-compose.yml                                 |    2 [32m+[m[31m-[m
+ docs/README.md                                     |   56 [32m+[m
+ docs/api-reference.md                              |  189 [32m+++[m
+ docs/architecture.md                               |  121 [32m++[m
+ docs/audit-logs.md                                 |   49 [32m+[m
+ docs/authentication-and-authorization.md           |  110 [32m++[m
+ docs/automations-and-notifications.md              |   97 [32m++[m
+ docs/backend.md                                    |  102 [32m++[m
+ docs/configuration.md                              |   86 [32m++[m
+ docs/database.md                                   |  168 [32m+++[m
+ docs/decisions/0001-explicit-migrations.md         |   23 [32m+[m
+ docs/decisions/0002-single-overdue-rule.md         |   24 [32m+[m
+ docs/decisions/0003-tracked-automation-runs.md     |   27 [32m+[m
+ docs/decisions/0004-storage-abstraction.md         |   23 [32m+[m
+ .../0005-read-only-demo-by-configuration.md        |   26 [32m+[m
+ docs/decisions/0006-explicit-swagger-decorators.md |   21 [32m+[m
+ docs/decisions/0007-verified-database-tls.md       |   25 [32m+[m
+ docs/decisions/README.md                           |   18 [32m+[m
+ docs/deployment.md                                 |  126 [32m++[m
+ docs/development-guide.md                          |  108 [32m++[m
+ docs/document-management.md                        |   95 [32m++[m
+ docs/frontend.md                                   |  103 [32m++[m
+ docs/security.md                                   |   73 [32m++[m
+ docs/testing.md                                    |  109 [32m++[m
+ e TLS certificatesq                                |   96 [31m--[m
+ 27 files changed, 1899 insertions(+), 1318 deletions(-)

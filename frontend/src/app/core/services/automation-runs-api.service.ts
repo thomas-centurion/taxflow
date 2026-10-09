@@ -8,7 +8,6 @@ import { AutomationRun } from '../../shared/models/automation-run.model';
 export class AutomationRunsApiService {
   private readonly http = inject(HttpClient);
 
-  /** Processes the obligation now; the API answers with the finished run (SUCCEEDED or FAILED). */
   run(obligationId: string): Observable<AutomationRun> {
     return this.http.post<AutomationRun>(`${API_BASE_URL}/tax-obligations/${obligationId}/automation-runs`, {});
   }

@@ -2,10 +2,6 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { statusLabel } from '../../shared/presentation/labels';
 import { TaxObligationStatus } from '../../shared/models/tax-obligation.model';
 
-/**
- * Spanish, actionable versions of the business errors the API returns (in English).
- * Only presentation: the API contract and its messages are unchanged.
- */
 const KNOWN_MESSAGES: [RegExp, (match: RegExpMatchArray) => string][] = [
   [/^Invalid status transition from (\w+) to (\w+)\.?$/, (m) => `No se puede pasar de "${statusLabel(m[1] as TaxObligationStatus)}" a "${statusLabel(m[2] as TaxObligationStatus)}". Las obligaciones aprobadas o canceladas no se pueden reabrir.`],
   [/^Only obligations with a past due date can be marked as OVERDUE\.?$/, () => 'Solo se puede marcar como vencida una obligación cuya fecha de vencimiento ya pasó.'],

@@ -1,6 +1,3 @@
-// Runs the E2E suite against an isolated backend and a disposable PostgreSQL database.
-// The development database is never touched: the test database is dropped and recreated on every run,
-// migrated and seeded, and a dedicated backend instance is started on E2E_PORT.
 const { spawn } = require('node:child_process');
 const fs = require('node:fs');
 const os = require('node:os');
@@ -14,6 +11,7 @@ const testDatabase = process.env.E2E_DATABASE_NAME || `${developmentDatabase}_te
 const port = process.env.E2E_PORT || '3100';
 const loginThrottleLimit = '20';
 
+// nunca se corre contra la base de desarrollo
 if (!/^[a-z0-9_]+_test$/.test(testDatabase) || testDatabase === developmentDatabase) {
   throw new Error(`Refusing to run E2E against "${testDatabase}": the database name must end with "_test" and differ from DATABASE_NAME.`);
 }
@@ -33,7 +31,6 @@ const env = {
   LOGIN_THROTTLE_LIMIT: loginThrottleLimit,
   LOGIN_THROTTLE_TTL_SECONDS: '60',
   TAXFLOW_API_URL: `http://localhost:${port}/api`,
-  // Read-only demo account created by demo-read-only.e2e.cjs (spacing and case exercise the normalization).
   DEMO_READ_ONLY_EMAILS: ' Demo.ReadOnly@TaxFlow.test , unused-demo@taxflow.test ',
 };
 
@@ -65,7 +62,7 @@ async function waitForHealth(server, output) {
     if (server.exitCode !== null) throw new Error(`E2E backend exited early:\n${output.join('')}`);
     try {
       if ((await fetch(`${env.TAXFLOW_API_URL}/health`)).ok) return;
-    } catch { /* not listening yet */ }
+    } catch { /* todavía no está escuchando */ }
     await new Promise((resolve) => setTimeout(resolve, 300));
   }
   throw new Error(`E2E backend did not become healthy:\n${output.join('')}`);

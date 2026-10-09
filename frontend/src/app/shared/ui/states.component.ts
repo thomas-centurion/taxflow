@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 
-/** Intentional empty state: what is missing and, through projected content, what to do next. */
 @Component({
   selector: 'app-empty-state',
   imports: [MatIconModule],
@@ -32,7 +31,6 @@ export class EmptyStateComponent {
   readonly compact = input(false);
 }
 
-/** Recoverable error with a retry action. */
 @Component({
   selector: 'app-error-state',
   imports: [MatButtonModule, MatIconModule],
@@ -51,7 +49,6 @@ export class ErrorStateComponent {
   readonly retry = output<void>();
 }
 
-/** Skeleton rows shown while a list loads, so the page never looks frozen or empty. */
 @Component({
   selector: 'app-loading-rows',
   changeDetection: ChangeDetectionStrategy.OnPush,

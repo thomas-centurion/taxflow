@@ -5,7 +5,6 @@ import { AutomationRunResult, AutomationRunStatus, AutomationRunTrigger } from '
 import { AutomationErrorCode, AutomationRunView } from '../automation-runs.service';
 import { DeadlineCheckResult } from '../deadline-automation.service';
 
-/** Outcome of processing the obligation. Failed runs only report `durationMs`. */
 export class AutomationRunResultDto implements AutomationRunResult {
   @ApiPropertyOptional({ enum: TaxObligationStatus, enumName: 'TaxObligationStatus' }) previousStatus?: TaxObligationStatus;
   @ApiPropertyOptional({ enum: TaxObligationStatus, enumName: 'TaxObligationStatus' }) status?: TaxObligationStatus;

@@ -18,6 +18,7 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
       })
     : request;
 
+  // un 401 fuera del login es una sesión vencida: se limpia y se vuelve al login
   return next(outgoing).pipe(
     catchError((error: unknown) => {
       if (

@@ -1,6 +1,4 @@
 #!/usr/bin/env sh
-# Read-only smoke test of a running production stack (`docker compose --profile app up -d --build`).
-# It never writes data, so it is safe against any installation. Usage: scripts/docker-smoke-test.sh [base-url]
 set -eu
 
 BASE_URL="${1:-http://localhost:${APP_PORT:-8080}}"

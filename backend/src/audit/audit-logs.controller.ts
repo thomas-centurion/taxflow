@@ -26,7 +26,6 @@ export class AuditLogsController {
   @ApiOkResponse({ type: PaginatedAuditLogsDto })
   @ApiErrorResponses([400, 'Invalid filter, or dateFrom is after dateTo.'], 403)
   findAll(@CurrentUser() user: AuthUser, @Query() query: AuditLogQueryDto) {
-    // Only a regular ADMIN sees security events (logins, users, countries); everyone else gets business entities.
     return this.auditLogs.findAll(query, user.role === UserRole.ADMIN && !user.readOnly);
   }
 }

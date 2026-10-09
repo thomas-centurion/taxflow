@@ -8,7 +8,6 @@ describe('buildDashboardMetrics', () => {
   const idle = aCompany({ id: 'idle', name: 'Idle' });
 
   const obligations = [
-    // Overdue comes from the backend flag, whatever the status says.
     anObligation({ id: 'late-pending', company: acme, status: 'PENDING', isOverdue: true, dueDate: '2026-10-01' }),
     anObligation({ id: 'late-marked', company: globex, status: 'OVERDUE', isOverdue: true, dueDate: '2026-09-20' }),
     anObligation({ id: 'today', company: acme, status: 'IN_PROGRESS', dueDate: '2026-10-08' }),

@@ -18,7 +18,6 @@ export class RolesGuard implements CanActivate {
     const user = context.switchToHttp().getRequest<{ user?: AuthUser }>().user;
     if (!user) return false;
     if (requiredRoles.includes(user.role)) return true;
-    // Read-only demo accounts may also use routes explicitly opened to them; DemoReadOnlyGuard blocks their writes.
     return !!user.readOnly && this.reflector.getAllAndOverride<boolean>(ALLOW_READ_ONLY_DEMO_KEY, [context.getHandler(), context.getClass()]) === true;
   }
 }

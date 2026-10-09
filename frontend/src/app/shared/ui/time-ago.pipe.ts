@@ -1,6 +1,5 @@
 import { Pipe, PipeTransform } from '@angular/core';
 
-/** Short relative time for event timestamps ("hace 5 min", "ayer", "12/10/2026"). */
 @Pipe({ name: 'timeAgo' })
 export class TimeAgoPipe implements PipeTransform {
   transform(value: string | Date | null | undefined, now = new Date()): string {

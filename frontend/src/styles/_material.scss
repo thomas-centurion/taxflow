@@ -1,7 +1,5 @@
 @use '@angular/material' as mat;
 
-// Angular Material 3 theme aligned with the TaxFlow tokens: petrol accent, IBM Plex Sans,
-// small radii, flat surfaces and compact controls for data-dense screens.
 html {
   color-scheme: light;
   @include mat.theme((
@@ -117,20 +115,15 @@ html {
 .mat-mdc-icon-button .mat-icon { font-size: 20px; width: 20px; height: 20px; }
 .mat-mdc-button .mat-icon, .mat-mdc-unelevated-button .mat-icon, .mat-mdc-outlined-button .mat-icon { font-size: 18px; width: 18px; height: 18px; }
 
-// Dialog title and actions are separated from the content by hairlines, like the rest of the app.
 .mat-mdc-dialog-container .mat-mdc-dialog-title { border-bottom: 1px solid var(--tf-line-soft); }
 .mat-mdc-dialog-container .mat-mdc-dialog-actions { border-top: 1px solid var(--tf-line-soft); gap: 8px; }
 .mat-mdc-dialog-container .mat-mdc-dialog-title::before { display: none; }
 
-// Snack bar variants used by FeedbackService.
 .tf-snack-success { --mat-snack-bar-button-color: #a9dcc0; }
 .tf-snack-error { --mat-snack-bar-container-color: #5e1712; --mat-snack-bar-button-color: #f3c0bb; }
 
-// Destructive actions keep Material's semantics but use the product danger color.
 .mat-mdc-unelevated-button.tf-danger:not(:disabled) { background: var(--tf-danger); color: #fff; }
-// Row-level delete buttons stay neutral and only reveal the danger color when targeted.
 .mat-mdc-icon-button.tf-danger-icon:not(:disabled) { color: var(--tf-ink-500); }
 .mat-mdc-icon-button.tf-danger-icon:not(:disabled):is(:hover, :focus-visible) { color: var(--tf-danger); }
 
-// Notifications dropdown in the top bar needs room for two-line messages.
 .mat-mdc-menu-panel.tf-notification-menu { width: 380px; max-width: calc(100vw - 24px); }

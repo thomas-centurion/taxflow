@@ -4,8 +4,6 @@ const crypto = require('node:crypto');
 const path = require('node:path');
 require('dotenv').config({ path: path.resolve(__dirname, '../../.env'), quiet: true });
 
-// Set by test/run-e2e.cjs, which runs an isolated backend against the taxflow_test database with
-// DEMO_READ_ONLY_EMAILS including DEMO_EMAIL (in another case and with spaces).
 const baseUrl = process.env.TAXFLOW_API_URL;
 if (!baseUrl) throw new Error('TAXFLOW_API_URL is not set: run E2E tests with "npm run test:e2e".');
 const password = process.env.SEED_USER_PASSWORD;
@@ -36,7 +34,6 @@ function pdf(name) {
   return form;
 }
 
-/** Creates the demo user (an ANALYST listed in DEMO_READ_ONLY_EMAILS), a document and an automation run to read. */
 async function setup(t) {
   const admin = await login('admin@taxflow.local');
   const manager = await login('manager@taxflow.local');
@@ -84,7 +81,6 @@ test('a read-only demo account can read every business area, including audit log
   assert.equal(download.status, 200, 'existing documents can be downloaded');
   assert.match(download.buffer.toString('utf8'), /demo-readable\.pdf/);
 
-  // Audit logs are visible with the business scope of a TAX_MANAGER: no user/login events.
   const audit = await api('GET', '/audit-logs?limit=100', token);
   assert.ok(audit.data.data.length > 0);
   assert.ok(audit.data.data.every((event) => ['Company', 'TaxObligation', 'Document', 'Notification', 'AutomationRun'].includes(event.entity)));
@@ -117,7 +113,6 @@ test('a read-only demo account cannot write anything, even on routes without @Ro
     ['DELETE', `/users/${demoUser.id}`],
     ['POST', `/tax-obligations/${obligation.id}/automation-runs`],
     ['POST', '/automation/check-deadlines'],
-    // No @Roles on these: blocked by the global read-only guard alone.
     ['PATCH', '/notifications/read-all'],
     ['PATCH', `/notifications/${randomId}/read`],
     ['POST', '/auth/logout'],
@@ -128,7 +123,6 @@ test('a read-only demo account cannot write anything, even on routes without @Ro
     assert.equal(response.data.message, READ_ONLY_MESSAGE, `${method} ${route} message`);
   }
 
-  // Nothing changed and nothing was recorded on behalf of the demo account by the blocked calls.
   assert.equal((await api('GET', `/companies/${company.id}`, admin.accessToken)).data.name, company.name);
   assert.equal((await api('GET', `/tax-obligations/${obligation.id}`, admin.accessToken)).data.name, obligation.name);
   assert.equal((await api('GET', `/documents/${document.id}/download`, admin.accessToken)).status, 200);
@@ -136,7 +130,6 @@ test('a read-only demo account cannot write anything, even on routes without @Ro
   assert.equal((await api('GET', `/tax-obligations/${obligation.id}/automation-runs`, admin.accessToken)).data[0].id, run.id, 'no automation run was started');
   assert.equal((await api('GET', `/audit-logs?actor=${demoUser.id}&limit=1`, admin.accessToken)).data.meta.total, auditBefore);
 
-  // The token keeps working: a blocked logout does not end the session server-side.
   assert.equal((await api('GET', '/auth/me', token)).status, 200);
 });
 
@@ -145,7 +138,6 @@ test('regular accounts keep their permissions while demo mode is configured', as
   const analyst = await login('analyst@taxflow.local');
   assert.equal(analyst.user.readOnly, false, 'an ANALYST outside DEMO_READ_ONLY_EMAILS is not read-only');
   assert.equal((await api('GET', '/audit-logs', analyst.accessToken)).status, 403, 'regular analysts still cannot read audit logs');
-  // Reaches the controller (404 for an unknown id) instead of the read-only 403, without consuming seeded notifications.
   assert.equal((await api('PATCH', `/notifications/${crypto.randomUUID()}/read`, analyst.accessToken)).status, 404, 'regular analysts can mark notifications as read');
   assert.equal((await api('POST', '/tax-obligations', analyst.accessToken, {})).status, 403, 'and still cannot write business data');
 

@@ -8,7 +8,6 @@ import { loggerLevels, trustProxySetting } from './common/runtime-options';
 import { isSwaggerEnabled, setupSwagger } from './common/swagger/swagger';
 
 async function bootstrap(): Promise<void> {
-  // AppModule's ConfigModule has already loaded .env into process.env when this module is imported.
   const app = await NestFactory.create<NestExpressApplication>(AppModule, { logger: loggerLevels(process.env.NODE_ENV) });
   const config = app.get(ConfigService);
   const frontendOrigin = config.get<string>(
@@ -28,7 +27,6 @@ async function bootstrap(): Promise<void> {
     }),
   );
   if (isSwaggerEnabled({ SWAGGER_ENABLED: config.get<string>('SWAGGER_ENABLED'), NODE_ENV: config.get<string>('NODE_ENV') })) setupSwagger(app);
-  // Lets containers stop gracefully on SIGTERM (database connections are closed before exit).
   app.enableShutdownHooks();
 
   const port = Number(config.get<string>('PORT', '3002'));

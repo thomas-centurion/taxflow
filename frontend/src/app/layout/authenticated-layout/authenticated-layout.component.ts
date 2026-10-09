@@ -38,9 +38,8 @@ export class AuthenticatedLayoutComponent {
   readonly initials = initials;
   readonly notificationIcons = NOTIFICATION_ICONS;
 
-  /** Navigation is computed once per session from the user's role (stable data, see AGENTS.md §10). */
+  // se arma una sola vez: un getter acá congelaba la app después del login
   readonly navGroups: NavGroup[] = [];
-  /** Read-only demo session: no mark-as-read actions (stable for the session, like navGroups). */
   readonly readOnly = this.auth.isReadOnly;
 
   readonly isMobile = toSignal(inject(BreakpointObserver).observe('(max-width: 960px)').pipe(map((state) => state.matches)), { initialValue: false });
@@ -119,7 +118,6 @@ export class AuthenticatedLayoutComponent {
     void this.router.navigate(item.taxObligation ? ['/app/tax-obligations', item.taxObligation.id] : ['/app/notifications']);
   }
 
-  /** Section name for the top bar, taken from the deepest active route's `data.section`. */
   private updateSectionTitle(): void {
     let snapshot = this.router.routerState.snapshot.root;
     while (snapshot.firstChild) snapshot = snapshot.firstChild;

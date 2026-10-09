@@ -1,7 +1,3 @@
-// Data tables (mat-table and plain <table>) share one visual language: hairline rows,
-// quiet headers, neutral row actions.
-
-// Positioned so visually hidden header labels stay inside the scroll area instead of widening the page.
 .tf-table-scroll { position: relative; overflow-x: auto; }
 
 .tf-table {
@@ -20,7 +16,6 @@
   td { font-size: var(--tf-text-sm); color: var(--tf-ink-800); }
   td strong { font-weight: 500; color: var(--tf-ink-900); }
 
-  // Plain HTML tables (dashboard, documents, history) mirror the mat-table metrics.
   &:not(.mat-mdc-table) {
     th { padding: 8px 16px; border-bottom: 1px solid var(--tf-line); }
     td { padding: 10px 16px; border-bottom: 1px solid var(--tf-line-soft); }
@@ -40,6 +35,5 @@
 
 .tf-table-footer { border-top: 1px solid var(--tf-line-soft); }
 
-// Two-line cells (title + secondary detail), also used in lists outside tables.
 .tf-cell-primary { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .tf-cell-secondary { font-size: var(--tf-text-xs); color: var(--tf-ink-500); }

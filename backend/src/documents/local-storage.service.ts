@@ -47,6 +47,7 @@ export class LocalStorageService extends StorageService {
     catch (error) { if (isMissing(error)) return false; throw error; }
   }
 
+  // impide que una clave escape de la carpeta de almacenamiento
   private async resolveTarget(storageKey: string, createDirectories: boolean): Promise<string> {
     if (!storageKey || storageKey.includes('\\') || storageKey.includes('\0')) throw new Error('Invalid storage key.');
     const segments = storageKey.split('/');

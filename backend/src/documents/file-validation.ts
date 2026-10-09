@@ -36,6 +36,7 @@ export function safeOriginalFilename(input: string): string {
   return safe;
 }
 
+// se valida la firma real del archivo, no solo la extensión
 function contentMatches(extension: string, content: Buffer): boolean {
   if (extension === '.pdf') return content.length >= 5 && content.subarray(0, 5).toString('ascii') === '%PDF-';
   if (extension === '.png') return content.length >= 8 && content.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));

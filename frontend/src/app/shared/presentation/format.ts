@@ -1,5 +1,3 @@
-/** Presentation helpers. Dates are calendar days (YYYY-MM-DD) and are never shifted by timezone. */
-
 const MIME_LABELS: Record<string, string> = {
   'application/pdf': 'PDF',
   'image/png': 'Imagen PNG',
@@ -22,7 +20,6 @@ export function fileSize(bytes: number): string {
 
 export function mimeLabel(mimeType: string): string { return MIME_LABELS[mimeType] ?? mimeType; }
 
-/** Local calendar date as YYYY-MM-DD. */
 export function todayKey(now = new Date()): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 }
@@ -32,14 +29,12 @@ export function addDays(dateKey: string, days: number): string {
   return todayKey(new Date(year, month - 1, day + days));
 }
 
-/** Whole calendar days from `from` to `to` (both YYYY-MM-DD). */
 export function daysBetween(from: string, to: string): number {
   const [fy, fm, fd] = from.split('-').map(Number);
   const [ty, tm, td] = to.split('-').map(Number);
   return Math.round((Date.UTC(ty, tm - 1, td) - Date.UTC(fy, fm - 1, fd)) / 86_400_000);
 }
 
-/** "en 3 días", "hoy", "hace 2 días" relative to today. */
 export function relativeDays(dateKey: string, today = todayKey()): string {
   const days = daysBetween(today, dateKey.slice(0, 10));
   if (days === 0) return 'hoy';
@@ -48,7 +43,6 @@ export function relativeDays(dateKey: string, today = todayKey()): string {
   return days > 0 ? `en ${days} días` : `hace ${-days} días`;
 }
 
-/** Formats a YYYY-MM-DD calendar day as dd/MM/yyyy without timezone conversion. */
 export function calendarDate(dateKey: string): string {
   const [year, month, day] = dateKey.slice(0, 10).split('-');
   return `${day}/${month}/${year}`;

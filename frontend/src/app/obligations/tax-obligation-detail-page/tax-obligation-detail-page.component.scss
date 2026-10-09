@@ -30,7 +30,6 @@ h1 { margin: 0; font-size: var(--tf-text-title); line-height: 28px; font-weight:
 
 .overdue-notice { margin-bottom: 16px; }
 
-// Record layout: work areas on the left, the record's properties in a fixed column on the right.
 .detail-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 280px;

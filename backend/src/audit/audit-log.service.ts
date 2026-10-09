@@ -72,6 +72,7 @@ export class AuditLogService {
 
 const SENSITIVE_KEY = /(password|passwordhash|token|secret|credential|authorization|binary|bytes|content|filepath|file_path|refresh)/i;
 
+// saca de la metadata cualquier clave sensible antes de guardarla
 function sanitize(value: unknown, key = ''): unknown {
   if (key.toLowerCase() === 'passwordchanged') return value === true;
   if (SENSITIVE_KEY.test(key)) return undefined;
@@ -87,7 +88,6 @@ function sanitize(value: unknown, key = ''): unknown {
   return undefined;
 }
 
-/** Midnight of a YYYY-MM-DD calendar day (plus `offsetDays`) in the backend process timezone, the same reference used for due dates. */
 export function startOfLocalDay(value: string, offsetDays = 0): Date {
   const [year, month, day] = value.split('-').map(Number);
   return new Date(year, month - 1, day + offsetDays);

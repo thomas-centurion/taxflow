@@ -1,6 +1,5 @@
 const ALLOWED_ENVIRONMENTS = ['development', 'test'];
 
-/** The development seed creates well-known credentials, so it only runs in development or test environments. */
 export function assertSeedAllowed(environment: NodeJS.ProcessEnv): string {
   const nodeEnv = (environment.NODE_ENV ?? '').trim().toLowerCase();
   if (!ALLOWED_ENVIRONMENTS.includes(nodeEnv)) {

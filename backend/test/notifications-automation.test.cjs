@@ -6,7 +6,6 @@ const { NotificationsService } = require('../dist/notifications/notifications.se
 const obligationId = '8de3a564-f432-4b48-a98a-8b2e4ef85493';
 const managerId = 'e75f1f9e-3963-4b0d-a70e-c2bd98cf4c3f';
 const audit = { record: async () => undefined };
-/** Minimal AutomationRunsService double: every obligation gets its own run. */
 const runs = { begin: async (id, trigger) => ({ id: `run-${id}`, taxObligationId: id, trigger }), succeed: async (run, _obligation, result) => { run.status = 'SUCCEEDED'; run.result = result; }, fail: async (run) => { run.status = 'FAILED'; } };
 
 test('deadline automation marks past obligations overdue and sends only actionable deadline notifications', async () => {

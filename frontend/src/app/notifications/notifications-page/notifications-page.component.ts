@@ -34,7 +34,6 @@ export class NotificationsPageComponent {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly icons = NOTIFICATION_ICONS;
-  /** Read-only demo session: notifications can be opened but not marked as read. */
   readonly readOnly = inject(AuthService).isReadOnly;
   readonly unreadCount = toSignal(this.api.unreadCount$, { initialValue: 0 });
   readonly view = signal<View>('all');

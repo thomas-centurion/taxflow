@@ -12,7 +12,6 @@ const RESPONSIBLE_ID = '33333333-3333-4333-8333-333333333333';
 const requester = { id: REQUESTER_ID, firstName: 'Taylor', lastName: 'Manager', email: 'manager@example.local', role: 'TAX_MANAGER', isActive: true };
 const NOW = new Date(2026, 9, 8, 12);
 
-/** AutomationRunsService over an in-memory run table, recording audit events and notifications. */
 function runsHarness({ duplicate = false, stale = [] } = {}) {
   const rows = new Map();
   const calls = { audit: [], notifications: [] };
@@ -114,7 +113,6 @@ test('runs left PENDING or RUNNING by a restart are marked FAILED (INTERRUPTED) 
   assert.ok(calls.audit.every((event) => event.actorType === 'SYSTEM' && event.action === 'AUTOMATION_FAILED'));
 });
 
-/** DeadlineAutomationService with fake repositories and a recording runs service. */
 function processingHarness(records, { begin } = {}) {
   const updates = [];
   const audit = [];

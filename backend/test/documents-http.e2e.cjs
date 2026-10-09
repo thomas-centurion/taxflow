@@ -3,7 +3,6 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 
-// Set by test/run-e2e.cjs, which runs an isolated backend on a dedicated test database. Never falls back to the development API.
 const baseUrl = process.env.TAXFLOW_API_URL;
 if (!baseUrl) throw new Error('TAXFLOW_API_URL is not set: run E2E tests with "npm run test:e2e".');
 const password = process.env.SEED_USER_PASSWORD;
@@ -100,7 +99,6 @@ test('document API validates access, upload, listing, download, deletion and sto
   const listAfterDelete = await api('GET', `/tax-obligations/${obligation.id}/documents`, admin);
   assert.equal((await json(listAfterDelete)).some((entry) => entry.id === secondMetadata.id), false, 'delete removes metadata');
 
-  // The deleted file cannot be downloaded and its metadata is removed as well.
   assert.equal((await api('DELETE', `/documents/${metadata.id}`, manager)).status, 204, 'tax manager delete succeeds');
   createdDocumentIds.splice(createdDocumentIds.indexOf(metadata.id), 1);
   assert.equal((await api('GET', `/documents/${metadata.id}/download`, admin)).status, 404);

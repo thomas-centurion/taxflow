@@ -110,7 +110,6 @@ test('TaxObligationsService accepts valid transitions and unchanged final status
   await submitted.service.update(uuid, { status: 'APPROVED' }, { id: uuid });
   assert.equal(submitted.wasSaved(), true);
 
-  // The editor always resends the current status; editing other fields of a final obligation stays allowed.
   const approved = obligationsService({ ...baseObligation, status: 'APPROVED' });
   await approved.service.update(uuid, { status: 'APPROVED', name: 'VAT renamed' }, { id: uuid });
   assert.equal(approved.wasSaved(), true);

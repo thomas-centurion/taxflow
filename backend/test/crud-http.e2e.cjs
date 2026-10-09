@@ -4,7 +4,6 @@ const crypto = require('node:crypto');
 const path = require('node:path');
 require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 
-// Set by test/run-e2e.cjs, which runs an isolated backend on a dedicated test database. Never falls back to the development API.
 const baseUrl = process.env.TAXFLOW_API_URL;
 if (!baseUrl) throw new Error('TAXFLOW_API_URL is not set: run E2E tests with "npm run test:e2e".');
 const password = process.env.SEED_USER_PASSWORD;

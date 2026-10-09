@@ -26,7 +26,6 @@ import { StatusBadgeComponent } from '../../shared/ui/status-badge.component';
 import { ObligationEditorService } from '../obligation-editor.service';
 import { ObligationAutomationPanelComponent } from '../obligation-automation-panel/obligation-automation-panel.component';
 
-/** Client-side pre-check mirroring the API's accepted files; the API still validates content. */
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const ALLOWED_FILE_TYPES: Record<string, string> = {
   '.pdf': 'application/pdf', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',

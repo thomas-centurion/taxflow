@@ -31,11 +31,9 @@ export class AuthService {
       .addSelect('user.passwordHash')
       .where('user.email = :email', { email: credentials.email })
       .getOne();
-    // Always run bcrypt so unknown or inactive accounts take as long as a wrong password.
+    // bcrypt corre siempre para que el tiempo de respuesta no delate si la cuenta existe
     const passwordMatches = await bcrypt.compare(credentials.password, user?.passwordHash ?? await timingEqualizerHash());
     if (!user || !user.isActive || !passwordMatches) {
-      // The attempted email is only stored when it belongs to a known account: free text typed into the
-      // email field may be a mistyped password. The response never reveals which check failed.
       await this.audit.record({ action: AuditAction.LOGIN_FAILED, entity: 'User', entityId: user?.id ?? null, metadata: user ? { email: user.email } : { knownUser: false } });
       throw new UnauthorizedException('Invalid credentials');
     }

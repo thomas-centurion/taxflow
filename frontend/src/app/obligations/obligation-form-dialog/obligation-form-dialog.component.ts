@@ -40,7 +40,6 @@ export class ObligationFormDialogComponent {
   readonly saving = signal(false);
   readonly error = signal('');
 
-  /** Inactive companies/users are not offered, except the ones already assigned to the record being edited. */
   readonly companies: Company[] = withCurrent(this.data.companies, this.data.record?.company);
   readonly users: UserOption[] = withCurrent(this.data.users, this.data.record?.responsibleUser ?? undefined);
 
@@ -57,7 +56,6 @@ export class ObligationFormDialogComponent {
   private readonly companyId = toSignal(this.form.controls.companyId.valueChanges, { initialValue: this.form.controls.companyId.value });
   private readonly status = toSignal(this.form.controls.status.valueChanges, { initialValue: this.form.controls.status.value });
 
-  /** The obligation's country always follows its company (the API rejects mismatches). */
   readonly country = computed(() => this.companies.find((company) => company.id === this.companyId())?.country ?? null);
   readonly statusHint = computed(() => OBLIGATION_STATUS[this.status()].description);
 

@@ -18,7 +18,6 @@ export const loginGuard: CanActivateFn = () => {
   );
 };
 
-/** Allows `data.roles`; routes with `data.allowReadOnly` also admit read-only demo accounts (mirrors @AllowReadOnlyDemo). */
 export const roleGuard: CanActivateFn = (route) => {
   const auth = inject(AuthService);
   const router = inject(Router);

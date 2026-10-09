@@ -9,10 +9,6 @@ import { UsersApiService } from '../core/services/users-api.service';
 import { TaxObligation } from '../shared/models/tax-obligation.model';
 import { ObligationFormDialogComponent, ObligationFormDialogData } from './obligation-form-dialog/obligation-form-dialog.component';
 
-/**
- * Opens the create/edit obligation dialog with its options loaded. Shared by the list and the
- * detail page so both offer the same editing experience. Emits the saved obligation.
- */
 @Injectable({ providedIn: 'root' })
 export class ObligationEditorService {
   private readonly dialog = inject(MatDialog);

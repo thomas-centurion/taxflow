@@ -1,8 +1,5 @@
 @use '@angular/material' as mat;
 
-// Layout primitives shared by every page: sections, toolbars, filter bars, definition lists and forms.
-
-// A bordered section. Lists and grouped content use it; it is a container, not a floating card.
 .tf-panel {
   background: var(--tf-surface);
   border: 1px solid var(--tf-line);
@@ -36,7 +33,6 @@
   .tf-toolbar-meta { margin-left: auto; font-size: var(--tf-text-xs); color: var(--tf-ink-500); white-space: nowrap; }
 }
 
-// Form fields inside toolbars and filter bars are one step denser and carry no hint/error space.
 .tf-toolbar, .tf-filters {
   @include mat.form-field-density(-4);
   @include mat.select-density(-4);
@@ -66,7 +62,6 @@
   .tf-filter-summary { font-size: var(--tf-text-xs); color: var(--tf-ink-500); margin-right: auto; }
 }
 
-// Read-only properties of a record, as label/value pairs.
 .tf-dl {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));

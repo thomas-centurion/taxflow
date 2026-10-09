@@ -3,13 +3,10 @@ import { TaxObligation } from '../tax-obligations/tax-obligation.entity';
 import { TaxObligationStatus } from '../tax-obligations/tax-obligation-status.enum';
 import { User } from '../users/user.entity';
 
-/** Lifecycle of one automation execution. Independent from the obligation's own status. */
 export enum AutomationRunStatus { PENDING = 'PENDING', RUNNING = 'RUNNING', SUCCEEDED = 'SUCCEEDED', FAILED = 'FAILED' }
 
-/** What started the run: a user from the obligation detail, or the deadline scheduler. */
 export enum AutomationRunTrigger { MANUAL = 'MANUAL', SCHEDULED = 'SCHEDULED' }
 
-/** Structured outcome of processing one obligation. Failed runs only report their duration. */
 export interface AutomationRunResult {
   previousStatus?: TaxObligationStatus;
   status?: TaxObligationStatus;
@@ -21,7 +18,6 @@ export interface AutomationRunResult {
   durationMs?: number;
 }
 
-/** One execution of the automated processing of a tax obligation (TaxObligation 1 — N AutomationRun). */
 @Entity({ name: 'automation_runs' })
 @Index('IDX_automation_runs_obligation_created', ['taxObligationId', 'createdAt'])
 export class AutomationRun {
@@ -31,7 +27,6 @@ export class AutomationRun {
   @ManyToOne(() => TaxObligation, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'tax_obligation_id' }) taxObligation!: TaxObligation;
 
-  /** Null for scheduled runs, or when the requesting user was deleted. */
   @Column({ name: 'requested_by_id', type: 'uuid', nullable: true }) requestedById!: string | null;
   @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'requested_by_id' }) requestedBy!: User | null;

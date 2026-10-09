@@ -27,7 +27,6 @@ function positiveInteger(config: ConfigService, key: string, fallback: number): 
     TypeOrmModule.forFeature([User]),
     AuditModule,
     PassportModule,
-    // Only applied to POST /auth/login through LoginThrottlerGuard; there is no global throttling.
     ThrottlerModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
@@ -46,7 +45,7 @@ function positiveInteger(config: ConfigService, key: string, fallback: number): 
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, JwtAuthGuard, RolesGuard, LoginThrottlerGuard, ReadOnlyAccounts, DemoReadOnlyGuard,
-    // Order matters: authenticate, then block writes of read-only demo accounts, then check roles.
+    // el orden importa: autenticar, bloquear escrituras de solo lectura y después validar roles
     { provide: APP_GUARD, useExisting: JwtAuthGuard },
     { provide: APP_GUARD, useExisting: DemoReadOnlyGuard },
     { provide: APP_GUARD, useExisting: RolesGuard },

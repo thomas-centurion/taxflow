@@ -1,5 +1,4 @@
 services:
-  # Development database. `docker compose up -d postgres` starts only this service.
   postgres:
     image: postgres:16-alpine
     container_name: taxflow-postgres
@@ -18,7 +17,6 @@ services:
       timeout: 5s
       retries: 10
 
-  # Production build of the API (`docker compose --profile app up -d --build`).
   backend:
     profiles: [app]
     build: ./backend
@@ -38,19 +36,15 @@ services:
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1d}
       FRONTEND_ORIGIN: ${APP_ORIGIN:-http://localhost:8080}
-      # Requests arrive through the frontend nginx: one proxy hop, so the login rate limit sees the client IP.
       TRUST_PROXY: "1"
       STORAGE_LOCAL_PATH: ./storage
       LOGIN_THROTTLE_LIMIT: ${LOGIN_THROTTLE_LIMIT:-5}
       LOGIN_THROTTLE_TTL_SECONDS: ${LOGIN_THROTTLE_TTL_SECONDS:-60}
-      # Optional read-only demo accounts (see "Demo Mode" in the README); empty disables the mode.
       DEMO_READ_ONLY_EMAILS: ${DEMO_READ_ONLY_EMAILS:-}
-      # Only used by the demo seed command, which refuses to run with NODE_ENV=production.
       SEED_USER_PASSWORD: ${SEED_USER_PASSWORD:-}
     volumes:
       - taxflow-documents:/app/storage
 
-  # Production build of the web app; the only published port. Proxies /api to the backend.
   frontend:
     profiles: [app]
     build: ./frontend

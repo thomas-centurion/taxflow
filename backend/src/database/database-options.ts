@@ -17,17 +17,12 @@ export function createDatabaseOptions(
     type: 'postgres', host: environment.DATABASE_HOST || 'localhost', port, username, password,
     database: environment.DATABASE_NAME || 'taxflow', entities: registeredEntities, migrations: registeredMigrations,
     migrationsTableName: 'typeorm_migrations', synchronize: false, uuidExtension: 'pgcrypto',
-    // Production images have no ts-node: the app applies pending migrations on startup when enabled.
     migrationsRun: isEnabled(environment.DATABASE_MIGRATIONS_RUN),
     ssl: sslOptions(environment),
   };
 }
 
-/**
- * TLS for managed PostgreSQL. The server certificate and host name are always verified: against the
- * CA in DATABASE_SSL_CA / DATABASE_SSL_CA_FILE when set (providers with a private CA, such as Supabase),
- * otherwise against the public CAs trusted by Node.js. There is deliberately no option to skip verification.
- */
+// la verificación del certificado nunca se desactiva: sin ca propia se usan las ca públicas
 function sslOptions(environment: NodeJS.ProcessEnv): PostgresConnectionOptions['ssl'] {
   const ca = certificateAuthority(environment);
   if (!isEnabled(environment.DATABASE_SSL)) {
@@ -43,7 +38,6 @@ function certificateAuthority(environment: NodeJS.ProcessEnv): string | undefine
   if (inline && file) throw new Error('Set only one of DATABASE_SSL_CA and DATABASE_SSL_CA_FILE.');
   let pem: string;
   if (inline) {
-    // Single-line environment values may carry the PEM line breaks as a literal backslash-n.
     pem = inline.replace(/\\n/g, '\n');
   } else if (file) {
     try {

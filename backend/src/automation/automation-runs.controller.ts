@@ -9,7 +9,6 @@ import { AutomationRunResponseDto } from './dto/automation-run-response.dto';
 import { AutomationRunsService } from './automation-runs.service';
 import { DeadlineAutomationService } from './deadline-automation.service';
 
-/** Per-obligation automation: run the processing now (same roles as the batch check) and read the run history. */
 @ApiTags('Automation Runs')
 @ApiJwtAuth()
 @Controller()

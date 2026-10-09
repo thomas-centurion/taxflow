@@ -15,7 +15,6 @@ export enum AutomationErrorCode {
   INTERNAL_ERROR = 'INTERNAL_ERROR',
 }
 
-/** Expected processing failure, stored on the run with a stable code and a non-sensitive message. */
 export class AutomationError extends Error {
   constructor(readonly code: AutomationErrorCode, message: string) { super(message); }
 }
@@ -34,7 +33,6 @@ export interface AutomationRunView {
   createdAt: Date;
 }
 
-/** Spanish explanations for failure notifications (the API keeps stable codes; the frontend has its own labels). */
 const FAILURE_REASONS: Record<AutomationErrorCode, string> = {
   OBLIGATION_NOT_FOUND: 'la obligación ya no existe.',
   NOT_PROCESSABLE: 'la obligación ya no está pendiente, en curso ni vencida.',
@@ -44,10 +42,6 @@ const FAILURE_REASONS: Record<AutomationErrorCode, string> = {
 
 const ACTIVE_STATUSES = [AutomationRunStatus.PENDING, AutomationRunStatus.RUNNING];
 
-/**
- * Lifecycle of AutomationRun records: PENDING → RUNNING → SUCCEEDED | FAILED, with audit events and
- * notifications for each outcome. What a run actually does lives in DeadlineAutomationService.
- */
 @Injectable()
 export class AutomationRunsService implements OnApplicationBootstrap {
   private readonly logger = new Logger(AutomationRunsService.name);
@@ -58,10 +52,7 @@ export class AutomationRunsService implements OnApplicationBootstrap {
     private readonly audit: AuditLogService,
   ) {}
 
-  /**
-   * Runs left PENDING/RUNNING by a previous process can never finish. Their processing ran in a
-   * transaction that was rolled back, so marking them FAILED is safe; the next run redoes the work.
-   */
+  // ejecuciones que quedaron activas por un reinicio: su transacción nunca se confirmó
   async onApplicationBootstrap(): Promise<void> {
     const stale = await this.runs.find({ where: { status: In(ACTIVE_STATUSES) }, relations: { taxObligation: { company: true } } });
     for (const run of stale) {
@@ -69,14 +60,13 @@ export class AutomationRunsService implements OnApplicationBootstrap {
     }
   }
 
-  /** Records a new run and moves it to RUNNING. Throws 409 when the obligation already has an active run. */
   async begin(taxObligationId: string, trigger: AutomationRunTrigger, requester: AuthUser | null): Promise<AutomationRun> {
     let run: AutomationRun;
     try {
       run = await this.runs.save(this.runs.create({ taxObligationId, trigger, requestedById: requester?.id ?? null, status: AutomationRunStatus.PENDING }));
     } catch (error) {
-      // The partial unique index guarantees a single active run per obligation, also under concurrency.
       if ((error as { driverError?: { code?: string } }).driverError?.code === '23505') {
+        // el índice único parcial no permite dos ejecuciones activas por obligación
         throw new ConflictException('This obligation is already being processed.');
       }
       throw error;
@@ -97,7 +87,6 @@ export class AutomationRunsService implements OnApplicationBootstrap {
       ...actorOf(requester), action: AuditAction.AUTOMATION_SUCCEEDED, entity: 'AutomationRun', entityId: run.id,
       metadata: { taxObligationId: obligation.id, trigger: run.trigger, overdueMarked: result.overdueMarked, notificationsCreated: result.notificationsCreated },
     });
-    // Scheduled successes are already reported by the deadline notifications; only a person who asked gets a confirmation.
     if (requester) {
       await this.notifications.notifyAutomationResult({
         runId: run.id,

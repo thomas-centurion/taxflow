@@ -2,5 +2,4 @@
 
 .obligations-table { min-width: 880px; }
 
-// A thin danger marker makes overdue rows easy to spot while scanning.
 .row-overdue td:first-child { box-shadow: inset 2px 0 0 var(--tf-danger); }

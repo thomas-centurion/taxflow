@@ -63,6 +63,7 @@ export class DocumentsService {
         return saved;
       });
     } catch (error) {
+      // falló la base: se borra el archivo ya guardado para no dejar huérfanos
       try { await this.storage.delete(storageKey); }
       catch { throw new InternalServerErrorException('Document metadata could not be saved and storage cleanup failed.'); }
       const driverCode = (error as { driverError?: { code?: string } }).driverError?.code;
@@ -84,6 +85,7 @@ export class DocumentsService {
 
   async remove(id: string, actor: AuthUser): Promise<void> {
     const record = await this.findDocument(id);
+    // copia en memoria para restaurar el archivo si falla la transacción
     let backup: Buffer | undefined;
     try { if (await this.storage.exists(record.filePath)) backup = await this.storage.get(record.filePath); }
     catch (error) { if (!(error instanceof StorageObjectNotFoundError)) throw error; }

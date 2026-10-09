@@ -1,21 +1,16 @@
-// Design tokens shared by every screen. Components consume these custom properties
-// instead of hard-coded colors so the product keeps a single, consistent palette.
 :root {
   --tf-font: 'IBM Plex Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
   --tf-font-mono: 'IBM Plex Mono', Consolas, 'SFMono-Regular', monospace;
 
-  // Type scale: page title, section title, body, table/secondary text, metadata.
   --tf-text-title: 20px;
   --tf-text-section: 14px;
   --tf-text-body: 14px;
   --tf-text-sm: 13px;
   --tf-text-xs: 12px;
 
-  // Accent: used for primary actions, links, selection and focus only.
   --tf-primary: #1f5b85;
   --tf-primary-soft: #e9f0f6;
 
-  // Neutrals
   --tf-ink-900: #16191d;
   --tf-ink-800: #262b31;
   --tf-ink-700: #3b4149;
@@ -32,7 +27,6 @@
   --tf-hover: #f3f4f6;
   --tf-selected: #e6ecf1;
 
-  // Semantic: tinted backgrounds stay light so status color never dominates a screen.
   --tf-success: #1d6b45;
   --tf-success-soft: #e8f3ed;
   --tf-warning: #87590b;
@@ -47,7 +41,6 @@
   --tf-neutral: #555c65;
   --tf-neutral-soft: #eef0f2;
 
-  // Shape & depth: small radii, borders instead of shadows. Shadows are reserved for overlays.
   --tf-radius-sm: 4px;
   --tf-radius: 6px;
   --tf-radius-lg: 8px;

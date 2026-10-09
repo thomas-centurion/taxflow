@@ -4,7 +4,6 @@ const crypto = require('node:crypto');
 const path = require('node:path');
 require('dotenv').config({ path: path.resolve(__dirname, '../../.env'), quiet: true });
 
-// Set by test/run-e2e.cjs, which runs an isolated backend against the taxflow_test database.
 const baseUrl = process.env.TAXFLOW_API_URL;
 if (!baseUrl) throw new Error('TAXFLOW_API_URL is not set: run E2E tests with "npm run test:e2e".');
 const origin = baseUrl.replace(/\/api$/, '');
@@ -35,7 +34,6 @@ function openApiDocument() {
   return documentPromise;
 }
 
-/** Validates a JSON value against an OpenAPI 3.0 schema: types, required and undocumented properties, nullability, enums. */
 function schemaErrors(document, schema, value, at = '$') {
   if (schema.$ref) return schemaErrors(document, document.components.schemas[schema.$ref.split('/').pop()], value, at);
   if (value === null) return schema.nullable ? [] : [`${at} is null but not nullable`];
@@ -64,7 +62,6 @@ function schemaErrors(document, schema, value, at = '$') {
   }
 }
 
-/** Asserts that a real response matches what the OpenAPI document declares for that operation and status. */
 async function assertDocumented(method, template, response) {
   const document = await openApiDocument();
   const operation = document.paths[`/api${template}`]?.[method.toLowerCase()];
@@ -137,7 +134,6 @@ test('real API responses match their documented schemas', async () => {
   await assertDocumented('GET', '/notifications/unread-count', await api('GET', '/notifications/unread-count', admin));
   await assertDocumented('GET', '/audit-logs', await api('GET', '/audit-logs?limit=20', admin));
 
-  // Errors keep the documented NestJS body.
   await assertDocumented('GET', '/companies/{id}', await api('GET', `/companies/${crypto.randomUUID()}`, admin));
   await assertDocumented('POST', '/companies', await api('POST', '/companies', admin, {}));
   await assertDocumented('GET', '/auth/me', await api('GET', '/auth/me'));

@@ -4,10 +4,6 @@ import { calendarDate, daysBetween, relativeDays, todayKey } from '../presentati
 
 const ACTIVE: TaxObligationStatus[] = ['PENDING', 'IN_PROGRESS', 'OVERDUE'];
 
-/**
- * Due date with a relative hint ("en 3 días", "hace 2 días") for obligations that still need work.
- * Whether an obligation is overdue comes from the backend (`overdue` input); this only presents it.
- */
 @Component({
   selector: 'app-due-date',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -17,6 +17,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: JwtPayload): Promise<AuthUser> {
+    // se recarga el usuario en cada request: desactivarlo invalida sus tokens al instante
     const user = await this.users.findOne({ where: { id: payload.sub, isActive: true } });
     if (!user) throw new UnauthorizedException();
     return {

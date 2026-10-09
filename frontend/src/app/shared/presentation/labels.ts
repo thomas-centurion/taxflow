@@ -4,7 +4,6 @@ import { NotificationType } from '../models/notification.model';
 import { TaxObligationStatus, TaxObligationType } from '../models/tax-obligation.model';
 import { UserRole } from '../models/user.model';
 
-/** Visual tone of a badge; mapped to semantic colors in styles/_feedback.scss. */
 export type BadgeTone = 'success' | 'warning' | 'danger' | 'info' | 'violet' | 'neutral';
 
 export interface Option<T extends string> { value: T; label: string }
@@ -76,7 +75,6 @@ export const AUDIT_ENTITY_LABELS: Record<string, string> = {
 
 export const AUDIT_ENTITY_OPTIONS: Option<string>[] = Object.entries(AUDIT_ENTITY_LABELS).map(([value, label]) => ({ value, label }));
 
-/** Human labels for field names that appear in audit metadata. */
 export const FIELD_LABELS: Record<string, string> = {
   name: 'Nombre', description: 'Descripción', status: 'Estado', type: 'Tipo', dueDate: 'Vencimiento',
   companyId: 'Empresa', countryId: 'País', responsibleUserId: 'Responsable', taxId: 'Identificador fiscal',
@@ -107,7 +105,6 @@ export const AUTOMATION_TRIGGER_LABELS: Record<AutomationRunTrigger, string> = {
   SCHEDULED: 'Programada',
 };
 
-/** What each automation failure means for the user. */
 export const AUTOMATION_ERROR_LABELS: Record<AutomationErrorCode, string> = {
   OBLIGATION_NOT_FOUND: 'La obligación ya no existe.',
   NOT_PROCESSABLE: 'La obligación ya no está pendiente, en curso ni vencida.',

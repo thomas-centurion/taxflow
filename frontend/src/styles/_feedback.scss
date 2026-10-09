@@ -1,6 +1,3 @@
-// Status badges and inline notices.
-
-// Compact status label: tinted background, no pill shape and no decorative dot.
 .tf-badge {
   display: inline-flex;
   align-items: center;
@@ -21,7 +18,6 @@
   &[data-tone='neutral'] { background: var(--tf-neutral-soft); color: var(--tf-neutral); }
 }
 
-// Outlined variant for secondary attributes (roles, audit actions): the tone only colors the text.
 .tf-badge.tf-badge-plain { padding: 0 5px; background: transparent; border: 1px solid var(--tf-line); }
 .tf-badge.tf-badge-plain:not([data-tone]) { color: var(--tf-ink-700); }
 

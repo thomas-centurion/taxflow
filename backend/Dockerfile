@@ -1,4 +1,3 @@
-# Production image: compiled NestJS app with production dependencies only, run as a non-root user.
 FROM node:22-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
@@ -13,7 +12,6 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --no-audit --no-fund && npm cache clean --force
 COPY --from=build /app/dist ./dist
-# Local document storage (STORAGE_LOCAL_PATH=./storage resolves to /app/storage); mount a volume here.
 RUN mkdir -p /app/storage && chown node:node /app/storage
 USER node
 EXPOSE 3002

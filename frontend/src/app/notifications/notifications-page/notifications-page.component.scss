@@ -27,7 +27,6 @@
   cursor: pointer;
 
   &:hover { background: var(--tf-hover); }
-  // Unread items keep the same background and are marked by an accent bar, a dot and a stronger title.
   &.unread { box-shadow: inset 2px 0 0 var(--tf-primary); }
   &.unread strong { font-weight: 600; color: var(--tf-ink-900); }
 }

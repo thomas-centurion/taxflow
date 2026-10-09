@@ -7,7 +7,6 @@ import { NotificationQueryDto } from './dto/notification-query.dto';
 import { MarkAllReadResponseDto, NotificationResponseDto, PaginatedNotificationsDto } from './dto/notification-response.dto';
 import { NotificationsService } from './notifications.service';
 
-/** Every endpoint only sees and changes the authenticated user's own notifications. */
 @ApiTags('Notifications')
 @ApiJwtAuth()
 @Controller('notifications')

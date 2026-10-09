@@ -3,7 +3,6 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { TaxObligationStatus } from '../models/tax-obligation.model';
 import { OBLIGATION_STATUS } from '../presentation/labels';
 
-/** Status pill for a tax obligation, with the meaning of the status as a tooltip. */
 @Component({
   selector: 'app-status-badge',
   imports: [MatTooltipModule],

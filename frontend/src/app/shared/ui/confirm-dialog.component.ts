@@ -6,12 +6,9 @@ import { Observable, filter, map } from 'rxjs';
 
 export interface ConfirmDialogData {
   title: string;
-  /** What will happen, in plain words. */
   message: string;
-  /** Name of the affected record, shown emphasized. */
   subject?: string;
   confirmLabel: string;
-  /** Destructive actions use the danger color and remind that they cannot be undone. */
   destructive?: boolean;
 }
 
@@ -46,7 +43,6 @@ export class ConfirmDialogComponent {
   readonly data = inject<ConfirmDialogData>(MAT_DIALOG_DATA);
 }
 
-/** Opens a confirmation dialog and emits once, only if the user confirmed. */
 export function confirmAction(dialog: MatDialog, data: ConfirmDialogData): Observable<true> {
   const config: MatDialogConfig<ConfirmDialogData> = { data, width: '440px', maxWidth: '94vw', autoFocus: 'first-tabbable', restoreFocus: true };
   return dialog.open<ConfirmDialogComponent, ConfirmDialogData, boolean>(ConfirmDialogComponent, config)

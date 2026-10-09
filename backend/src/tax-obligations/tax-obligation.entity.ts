@@ -31,7 +31,6 @@ export class TaxObligation {
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' }) updatedAt!: Date;
   @OneToMany(() => Document, (document) => document.taxObligation) documents!: Document[];
 
-  /** Derived, not persisted: computed with the shared overdue rule every time the entity is loaded. */
   isOverdue?: boolean;
   @AfterLoad() computeOverdue(): void { this.isOverdue = isOverdue(this.status, this.dueDate, todayKey()); }
 }

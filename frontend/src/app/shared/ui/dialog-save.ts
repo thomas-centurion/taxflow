@@ -9,10 +9,6 @@ export interface DialogSaveState {
   error: WritableSignal<string>;
 }
 
-/**
- * Runs a form dialog's save request while the dialog stays open: the dialog closes with the saved
- * record on success, and on failure keeps the user's input and shows the API's explanation inline.
- */
 export function saveFromDialog<T>(
   request: Observable<T>,
   dialogRef: MatDialogRef<unknown, T>,
