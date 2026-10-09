@@ -2,7 +2,6 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 import { AuthUser } from '../auth/auth-user';
-import { UserRole } from '../users/user-role.enum';
 import { AuditActorType, AuditAction } from './audit-action.enum';
 import { AuditLog } from './audit-log.entity';
 import { AuditLogQueryDto } from './dto/audit-log-query.dto';
@@ -54,10 +53,10 @@ export class AuditLogService {
     return repository.save(row);
   }
 
-  async findAll(query: AuditLogQueryDto, role: UserRole): Promise<PaginatedResult<AuditLogView>> {
+  async findAll(query: AuditLogQueryDto, fullAccess: boolean): Promise<PaginatedResult<AuditLogView>> {
     const builder = this.auditLogs.createQueryBuilder('audit')
       .leftJoinAndSelect('audit.user', 'actor');
-    if (role === UserRole.TAX_MANAGER) builder.andWhere('audit.entity IN (:...businessEntities)', { businessEntities: BUSINESS_ENTITIES });
+    if (!fullAccess) builder.andWhere('audit.entity IN (:...businessEntities)', { businessEntities: BUSINESS_ENTITIES });
     if (query.action) builder.andWhere('audit.action = :action', { action: query.action });
     if (query.entityType) builder.andWhere('audit.entity = :entityType', { entityType: query.entityType });
     if (query.entityId) builder.andWhere('audit.entityId = :entityId', { entityId: query.entityId });

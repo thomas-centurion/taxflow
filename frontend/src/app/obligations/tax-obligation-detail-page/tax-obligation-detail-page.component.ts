@@ -51,7 +51,7 @@ export class TaxObligationDetailPageComponent {
   private readonly dialog = inject(MatDialog);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly canManage = inject(AuthService).hasRole('ADMIN', 'TAX_MANAGER');
+  readonly canManage = inject(AuthService).canWrite('ADMIN', 'TAX_MANAGER');
   readonly acceptTypes = Object.entries(ALLOWED_FILE_TYPES).map(([extension, type]) => `${extension},${type}`).join(',');
   readonly typeLabel = typeLabel;
   readonly personName = personName;

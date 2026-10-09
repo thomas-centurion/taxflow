@@ -59,15 +59,26 @@ export class AuthService {
     return !!this.currentUser && roles.includes(this.currentUser.role);
   }
 
+  /** Read-only demo account: the backend rejects every write, so the UI must not offer any. */
+  get isReadOnly(): boolean { return !!this.currentUser?.readOnly; }
+
+  /** Role check for write actions: read-only demo accounts never qualify, whatever their role. */
+  canWrite(...roles: User['role'][]): boolean {
+    return !this.isReadOnly && this.hasRole(...roles);
+  }
+
   clearSession(): void {
     localStorage.removeItem(TOKEN_KEY);
     this.userSubject.next(null);
   }
 
   logout(): void {
+    const endSession = (): void => { this.clearSession(); void this.router.navigate(['/login']); };
+    // The backend rejects every write from a read-only demo account, logout included: end the session locally.
+    if (this.isReadOnly) { endSession(); return; }
     this.http.post(`${API_BASE_URL}/auth/logout`, {}).pipe(
       catchError(() => of(null)),
-      finalize(() => { this.clearSession(); void this.router.navigate(['/login']); }),
+      finalize(endSession),
     ).subscribe();
   }
 }

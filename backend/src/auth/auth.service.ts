@@ -9,6 +9,7 @@ import { AuthUser } from './auth-user';
 import { LoginDto } from './login.dto';
 import { AuditLogService } from '../audit/audit-log.service';
 import { AuditAction } from '../audit/audit-action.enum';
+import { ReadOnlyAccounts } from './read-only-accounts';
 
 let equalizerHash: Promise<string> | undefined;
 function timingEqualizerHash(): Promise<string> {
@@ -17,7 +18,12 @@ function timingEqualizerHash(): Promise<string> {
 
 @Injectable()
 export class AuthService {
-  constructor(@InjectRepository(User) private readonly users: Repository<User>, private readonly jwt: JwtService, private readonly audit: AuditLogService) {}
+  constructor(
+    @InjectRepository(User) private readonly users: Repository<User>,
+    private readonly jwt: JwtService,
+    private readonly audit: AuditLogService,
+    private readonly readOnlyAccounts: ReadOnlyAccounts,
+  ) {}
 
   async login(credentials: LoginDto): Promise<{ accessToken: string; tokenType: 'Bearer'; user: AuthUser }> {
     if (Buffer.byteLength(credentials.password, 'utf8') > 72) throw new UnauthorizedException('Invalid credentials');
@@ -45,6 +51,9 @@ export class AuthService {
   }
 
   toAuthUser(user: User): AuthUser {
-    return { id: user.id, firstName: user.firstName, lastName: user.lastName, email: user.email, role: user.role, isActive: user.isActive };
+    return {
+      id: user.id, firstName: user.firstName, lastName: user.lastName, email: user.email, role: user.role, isActive: user.isActive,
+      readOnly: this.readOnlyAccounts.isReadOnly(user.email),
+    };
   }
 }

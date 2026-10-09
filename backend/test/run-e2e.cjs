@@ -33,6 +33,8 @@ const env = {
   LOGIN_THROTTLE_LIMIT: loginThrottleLimit,
   LOGIN_THROTTLE_TTL_SECONDS: '60',
   TAXFLOW_API_URL: `http://localhost:${port}/api`,
+  // Read-only demo account created by demo-read-only.e2e.cjs (spacing and case exercise the normalization).
+  DEMO_READ_ONLY_EMAILS: ' Demo.ReadOnly@TaxFlow.test , unused-demo@taxflow.test ',
 };
 
 async function recreateTestDatabase() {

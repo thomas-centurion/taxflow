@@ -7,6 +7,7 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { finalize } from 'rxjs';
+import { AuthService } from '../../core/auth/auth.service';
 import { apiErrorMessage } from '../../core/errors/api-error-message';
 import { FeedbackService } from '../../core/feedback/feedback.service';
 import { NotificationsApiService } from '../../core/services/notifications-api.service';
@@ -33,6 +34,8 @@ export class NotificationsPageComponent {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly icons = NOTIFICATION_ICONS;
+  /** Read-only demo session: notifications can be opened but not marked as read. */
+  readonly readOnly = inject(AuthService).isReadOnly;
   readonly unreadCount = toSignal(this.api.unreadCount$, { initialValue: 0 });
   readonly view = signal<View>('all');
   readonly items = signal<TaxNotification[]>([]);
@@ -80,7 +83,7 @@ export class NotificationsPageComponent {
 
   open(item: TaxNotification): void {
     const navigate = (): void => { if (item.taxObligation) void this.router.navigate(['/app/tax-obligations', item.taxObligation.id]); };
-    if (item.isRead) { navigate(); return; }
+    if (item.isRead || this.readOnly) { navigate(); return; }
     this.api.markRead(item.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.items.update((items) => items.map((entry) => (entry.id === item.id ? { ...entry, isRead: true } : entry)));

@@ -40,6 +40,8 @@ export class AuthenticatedLayoutComponent {
 
   /** Navigation is computed once per session from the user's role (stable data, see AGENTS.md §10). */
   readonly navGroups: NavGroup[] = [];
+  /** Read-only demo session: no mark-as-read actions (stable for the session, like navGroups). */
+  readonly readOnly = this.auth.isReadOnly;
 
   readonly isMobile = toSignal(inject(BreakpointObserver).observe('(max-width: 960px)').pipe(map((state) => state.matches)), { initialValue: false });
   readonly unreadCount = toSignal(this.notificationsApi.unreadCount$, { initialValue: 0 });
@@ -61,7 +63,7 @@ export class AuthenticatedLayoutComponent {
     });
     const adminLinks: NavLink[] = [];
     if (role === 'ADMIN') adminLinks.push({ label: 'Usuarios', path: '/app/users', icon: 'group' }, { label: 'Países', path: '/app/countries', icon: 'public' });
-    if (role === 'ADMIN' || role === 'TAX_MANAGER') adminLinks.push({ label: 'Auditoría', path: '/app/audit-logs', icon: 'history' });
+    if (role === 'ADMIN' || role === 'TAX_MANAGER' || this.readOnly) adminLinks.push({ label: 'Auditoría', path: '/app/audit-logs', icon: 'history' });
     if (adminLinks.length) this.navGroups.push({ label: 'Administración', links: adminLinks });
 
     this.notificationsApi.refreshUnreadCount();
@@ -92,7 +94,7 @@ export class AuthenticatedLayoutComponent {
   }
 
   openNotification(item: TaxNotification): void {
-    if (item.isRead) { this.navigateTo(item); return; }
+    if (item.isRead || this.readOnly) { this.navigateTo(item); return; }
     this.notificationsApi.markRead(item.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.recentNotifications.update((items) => items.map((entry) => (entry.id === item.id ? { ...entry, isRead: true } : entry)));

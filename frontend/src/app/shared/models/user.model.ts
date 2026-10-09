@@ -7,6 +7,8 @@ export interface User {
   email: string;
   role: UserRole;
   isActive: boolean;
+  /** Read-only demo account (backend DEMO_READ_ONLY_EMAILS): every write answers 403. Only sent for the session user. */
+  readOnly?: boolean;
   createdAt: string;
   updatedAt: string;
 }
